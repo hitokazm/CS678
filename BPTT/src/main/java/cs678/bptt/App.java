@@ -1,4 +1,4 @@
-package CS678.BPTT;
+package cs678.bptt;
 
 /**
  * Hello world!
