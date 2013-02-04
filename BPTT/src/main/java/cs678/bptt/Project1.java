@@ -1,10 +1,6 @@
 package cs678.bptt;
 
-/**
- * Hello world!
- *
- */
-public class App 
+public class Project1 
 {
     public static void main( String[] args )
     {
