@@ -74,6 +74,7 @@ public class MLSystemManager {
 		if (evalMethod.equals("training"))
 		{
 			System.out.println("Calculating accuracy on training set...");
+			System.out.println("# cols: " + data.cols());
 			Matrix features = new Matrix(data, 0, 0, data.rows(), data.cols() - 1);
 			Matrix labels = new Matrix(data, 0, data.cols() - 1, data.rows(), 1);
 			Matrix confusion = new Matrix();

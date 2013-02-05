@@ -89,7 +89,7 @@ public class BPTT extends SupervisedLearner {
 	
 	/**
 	 * set # hidden nodes based on the number of features in the instances (if it's not pre-specified).
-	 * @param featureInstances: # cols in the matrix * 2 + 1(bias) (int)
+	 * @param featureInstances: # attributes in the matrix * 2 + 1(bias) (int)
 	 */
 	private void setNumHiddenNodes(Matrix featureInstances){
 		if (this.numHiddenNodes == 0)
