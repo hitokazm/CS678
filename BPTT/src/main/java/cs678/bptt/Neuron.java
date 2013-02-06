@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Neuron {
 
@@ -25,6 +27,8 @@ public class Neuron {
 	private int k; // size of history
 	private List<double[]> deltaWeights; // update weight values. There might be multiple deltaWs' if this neuron is in the hidden layer. 
 	
+	private final static Logger logger = Main.logger;
+	
 	/**
 	 * constructor
 	 */
@@ -32,6 +36,8 @@ public class Neuron {
 		this.momentum = 0.9; 
 		this.random = new Random();
 		this.deltaWeights = new ArrayList<double[]>();
+		if(logger.getLevel().equals(Level.INFO))
+			logger.info("Neuron is instantiated.");
 	}
 	
 	/**
@@ -41,6 +47,8 @@ public class Neuron {
 	public Neuron(double learningRate){
 		this();
 		this.setLearningRate(learningRate);
+		if(logger.getLevel().equals(Level.INFO))
+			logger.info("Learning Rate (eta): " + this.learningRate); 
 	}
 	
 	/**
@@ -62,6 +70,8 @@ public class Neuron {
 	public Neuron(double eta, Random random, double alpha){
 		this(eta, random);
 		this.setMomentum(alpha);
+		if(logger.getLevel().equals(Level.INFO))
+			logger.info("Momentum (alpha): " + this.momentum); 
 	}
 	
 	
@@ -75,6 +85,8 @@ public class Neuron {
 	public Neuron(double eta, Random random, double alpha, int k){
 		this(eta, random, alpha);
 		this.setK(k);
+		if(logger.getLevel().equals(Level.INFO))
+			logger.info("K: " + this.k);
 	}
 	
 	/**
@@ -88,6 +100,8 @@ public class Neuron {
 	public Neuron(double eta, Random random, double alpha, int k, int inputSize){
 		this(eta, random, alpha, k);
 		this.setWeights(inputSize);
+		if(logger.getLevel().equals(Level.INFO))
+			logger.info("Initial Weights: " + this.printWeights());
 	}
 	
 	/**
@@ -126,7 +140,7 @@ public class Neuron {
 	/**
 	 * print out weight values.
 	 */
-	public void printWeights(){
+	public String printWeights(){
 		StringBuilder sb = new StringBuilder();
 		sb.append("Weight Values: [");
 		for (double weight : this.weights){
@@ -136,7 +150,7 @@ public class Neuron {
 			}
 		}
 		sb.append("]\n");
-		System.out.println(sb);
+		return sb.toString();
 	}
 	
 	/**

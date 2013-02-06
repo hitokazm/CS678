@@ -1,6 +1,7 @@
 package cs678.bptt;
 
 import java.util.Random;
+import java.util.logging.Logger;
 
 import cs678.tools.Matrix;
 import cs678.tools.SupervisedLearner;
@@ -31,6 +32,8 @@ public class BPTT extends SupervisedLearner {
 	private Matrix validationFeatures; // validation features
 	private Matrix validationLabels; // validation labels (multiple columns)
 	private Matrix validationTestLabels; // validation labels (single columns)
+	
+	private final static Logger logger = Main.logger;
 	
 	/**
 	 * constructor

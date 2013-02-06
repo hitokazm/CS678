@@ -75,9 +75,8 @@ public class OutputLayer extends Layer {
 	 * @param inputSize input size (int)
 	 * @param targets target value vector (double[])
 	 */
-	public OutputLayer(int numNeurons, double eta, Random random, double alpha, int inputSize, double[] targets){
+	public OutputLayer(int numNeurons, double eta, Random random, double alpha, int inputSize){
 		super(numNeurons, eta, random, alpha, 1, inputSize);
-		this.setTargets(targets);
 	}
 
 	/**

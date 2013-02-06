@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import java.util.logging.*;
 
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -14,11 +15,15 @@ public abstract class Layer {
 	private double[] output; // output values from this layer
 	private double[] errorRates; // error rates (deltas) of the neurons in this layer
 	
+	private final static Logger logger = Main.logger;
+	
 	/**
 	 * constructor
 	 * @param numNeurons: # neurons in this layer (int)
 	 */
 	public Layer(int numNeurons){
+		if(logger.getLevel().equals(Level.INFO))
+			logger.info("# Neurons: " + numNeurons);
 		neurons = new Neuron[numNeurons]; // # for hidden, features + bias; for output, just the number
 		this.output = new double[this.neurons.length]; // output vector (same size as neurons)
 	}
