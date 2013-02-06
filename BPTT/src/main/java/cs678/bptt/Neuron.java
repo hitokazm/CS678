@@ -119,7 +119,8 @@ public class Neuron {
 	 * @param size: # weights (i.e., # arrows from this neuron to the upper layer; int)
 	 */
 	protected void setWeights(int size){
-		this.weights = this.setInitialWeights(size);
+		if(this.weights == null)
+			this.weights = this.setInitialWeights(size);
 	}
 
 	/**
@@ -182,6 +183,7 @@ public class Neuron {
 
 	/**
 	 * compute output value with sigmoid function
+	 * @param input input vector (double[])
 	 */
 	private void computeOutputValue(double[] input){
 		this.computeNetValue(input);
@@ -229,7 +231,7 @@ public class Neuron {
 	 * @param input (double[])
 	 */
 	public void setInput(double[] input){
-		this.input = Arrays.copyOf(input, input.length);
+		this.input = input;
 	}
 	
 	/**

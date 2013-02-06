@@ -1,8 +1,11 @@
 package cs678.bptt;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+
+import org.apache.commons.lang3.ArrayUtils;
 
 public abstract class Layer {
 	
@@ -71,6 +74,22 @@ public abstract class Layer {
 		this(numNeurons);
 		for(int i = 0; i < neurons.length; i++){
 			neurons[i] = new Neuron(eta, random, alpha, k);
+		}
+	}
+	
+	/**
+	 * constructor
+	 * @param numNeurons: # neurons in this layer (int)
+	 * @param eta: learning rate (double)
+	 * @param random: random number generator (Random)
+	 * @param alpha: momentum (double)
+	 * @param k: time series history size (int)
+	 * @param inputSize input size (int0
+	 */
+	public Layer(int numNeurons, double eta, Random random, double alpha, int k, int inputSize){
+		this(numNeurons);
+		for(int i = 0; i < neurons.length; i++){
+			neurons[i] = new Neuron(eta, random, alpha, k, inputSize);
 		}
 	}
 	
@@ -149,11 +168,50 @@ public abstract class Layer {
 	 *  i is the index of the neurons in this layer.  
 	 */
 	protected abstract void computeErrors();
+		
+	/**
+	 * get error vectors to pass down to the lower layer. (Don't get confused with computeErrors().)
+	 * The calculation is Sum_j (delta_j * w_ij), where j is the index of neurons in this layer 
+	 * and i is the index of the neurons in the lower hidden layer.
+	 * @return errors error vector size of # neurons in the lower hidden layer. (double[]).
+	 */
+	protected double[] getErrors(int numLowerNeurons) {
+		
+		List<Double> errors = new ArrayList<Double>(numLowerNeurons);
+		int startIndex = this.getStartIndex(numLowerNeurons);
+		Neuron[] neurons = this.getNeurons();
+	
+		int max = startIndex + numLowerNeurons;
+		
+		for (int i = startIndex; i < max; i++) {
+			double sum = 0.0;
+			for (Neuron neuron : neurons) {
+				double[] weights = neuron.getWeights();
+				sum += neuron.getErrorRate() * weights[i]; // Sum_j (delta_j * w_ij)
+			}
+			errors.add(sum);
+		}
+		
+		try{
+			if(errors.size() > numLowerNeurons){
+				throw new Exception("The number of errors should be the same as # of hidden neurons.");
+			}
+		}
+		catch(Exception e){
+			e.printStackTrace();
+		}
+		
+		// convert the ArrayList<Double> to double[]
+		return ArrayUtils.toPrimitive(errors.toArray(new Double[errors.size()]));
+	}
 	
 	/**
-	 * get error vectors of this layer.
-	 * @return error vector (double[])
+	 * Get start index of hidden neurons in the lower layer based on the input vector.
+	 * This process will save much time by avoiding assigning errors to the actual input vectors and 
+	 * bias neurons. 
+	 * @param numLowerNeurons
+	 * @return start index (int)
 	 */
-	protected abstract double[] getErrors();
+	protected abstract int getStartIndex(int numLowerNeurons);
 	
 }

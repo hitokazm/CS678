@@ -24,7 +24,7 @@ public class BPTT extends SupervisedLearner {
 	
 	private int k; // size of history
 	
-	private Layer[] layers; // input, hidden, and output layers
+	private Layer[] layers; // hidden and output layers
 	private Matrix trainFeatures; // training features
 	private Matrix trainLabels; // training labels (multiple columns)
 	private Matrix trainTestLabels; // train labels (single columns)
@@ -134,7 +134,14 @@ public class BPTT extends SupervisedLearner {
 
 	@Override
 	public void train(Matrix features, Matrix labels) throws Exception {
-		// TODO Auto-generated method stub
+		// create hidden layer
+		int inputSize = features.cols()*3+1; // #features (actual input size) + # hidden neurons (2 * #features) + 1 (bias)
+		Layer hiddenLayer = new HiddenLayer(features.cols()*2, this.learningRate, random, this.momentum, this.k, inputSize);
+		
+		// create output layer
+		inputSize = features.cols() * 2 + 1; // # hidden neurons (2 * #features) + 1 (bias)
+		this.setNumOutputNodes(labels); // compute # output nodes
+		Layer outputLayer = new OutputLayer(this.numOutputNodes, this.learningRate, this.random, this.momentum);
 
 	}
 
