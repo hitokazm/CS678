@@ -7,11 +7,14 @@ public class Main
 {
     public static void main( String[] args ) throws Exception
     {
-		MLSystemManager ml = new MLSystemManager();
-		Matrix matrix = new Matrix();
-		matrix.loadArff("data/activity.arff");
-		matrix.normalize();
-		Matrix small = new Matrix(matrix, 0, 3, matrix.rows(), 3);
-		small.print();
+//		MLSystemManager ml = new MLSystemManager();
+//		Matrix matrix = new Matrix();
+//		matrix.loadArff("data/activity.arff");
+//		matrix.normalize();
+//		Matrix small = new Matrix(matrix, 0, 3, matrix.rows(), 3);
+//		small.print();
+    	
+    	Neuron neuron = new Neuron();
+    	neuron.printWeights();
     }
 }
