@@ -36,8 +36,6 @@ public class Neuron {
 		this.momentum = 0.9; 
 		this.random = new Random();
 		this.deltaWeights = new ArrayList<double[]>();
-		if(logger.getLevel().equals(Level.INFO))
-			logger.info("Neuron is instantiated.");
 	}
 	
 	/**
@@ -47,8 +45,6 @@ public class Neuron {
 	public Neuron(double learningRate){
 		this();
 		this.setLearningRate(learningRate);
-		if(logger.getLevel().equals(Level.INFO))
-			logger.info("Learning Rate (eta): " + this.learningRate); 
 	}
 	
 	/**
@@ -70,8 +66,6 @@ public class Neuron {
 	public Neuron(double eta, Random random, double alpha){
 		this(eta, random);
 		this.setMomentum(alpha);
-		if(logger.getLevel().equals(Level.INFO))
-			logger.info("Momentum (alpha): " + this.momentum); 
 	}
 	
 	
@@ -85,8 +79,6 @@ public class Neuron {
 	public Neuron(double eta, Random random, double alpha, int k){
 		this(eta, random, alpha);
 		this.setK(k);
-		if(logger.getLevel().equals(Level.INFO))
-			logger.info("K: " + this.k);
 	}
 	
 	/**
@@ -100,8 +92,6 @@ public class Neuron {
 	public Neuron(double eta, Random random, double alpha, int k, int inputSize){
 		this(eta, random, alpha, k);
 		this.setWeights(inputSize);
-		if(logger.getLevel().equals(Level.INFO))
-			logger.info("Initial Weights: " + this.printWeights());
 	}
 	
 	/**
@@ -245,6 +235,7 @@ public class Neuron {
 	 * @param input (double[])
 	 */
 	public void setInput(double[] input){
+		logger.info("Current Input: " + BPTT.printArray(input));
 		this.input = input;
 	}
 	
@@ -283,6 +274,7 @@ public class Neuron {
 	private void computeErrorRate(double error){
 		double fPrimeNet = this.output * (1.0 - this.output); // f'(net)
 		this.errorRate = fPrimeNet * error; // set delta
+		logger.info("This neurons error rate: " + this.errorRate);
 	}
 	
 	
@@ -296,6 +288,7 @@ public class Neuron {
 		
 		for(int i = 0; i < deltaWeights.length; i++){
 			deltaWeights[i] = this.learningRate * this.input[i] * this.errorRate;
+			logger.info("This neuron's " + i + "th delta w: " + deltaWeights[i]);
 		}
 		
 		this.deltaWeights.add(deltaWeights);
@@ -340,6 +333,15 @@ public class Neuron {
 			totalDeltas[i] = deltaW;
 		}
 		
+		if(logger.getLevel().equals(Level.INFO)){
+			logger.info("# Delta W Vectors: " + this.deltaWeights.size());
+			for(double[] deltaWeights : this.deltaWeights){
+				logger.info("Delta Weights: " + BPTT.printArray(deltaWeights));
+			}
+			logger.info("Added Delta Weights: " + BPTT.printArray(totalDeltas));
+		}
+		
+		
 		return totalDeltas;
 				
 	}
@@ -350,12 +352,17 @@ public class Neuron {
 	 */
 	private void updateWeights(double[] summedDeltaWeights){
 		
+		logger.info("Before updating weights: " + BPTT.printArray(this.weights));
+		
 		try{
 			this.weights = add(this.weights, this.sumDeltaWeights());
 		}
 		catch(Exception e){
 			e.printStackTrace();
 		}
+
+		logger.info("After updating weights: " + BPTT.printArray(this.weights));
+				
 		this.clearDeltaWeights();
 		
 	}

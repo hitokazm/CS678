@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -12,8 +14,9 @@ public class OutputLayer extends Layer {
 	private double[] input; // input vector. Since this is a output layer, it accepts only one input. 
 	private double[] errors; // error (t_i - o_i) where i is the index of neuron i in this layer
 	private double[] errorRates; // error rates (delta), computed by delta_j = (t_j - o_j) o_j (1 - o_j)
-	private double[] targets; // target value vector; usually one value
 	private int numLowerNeurons; // # of neurons in the lower hidden layer
+	
+	private final static Logger logger = Main.logger;
 	
 	/**
 	 * constructor
@@ -77,14 +80,10 @@ public class OutputLayer extends Layer {
 	 */
 	public OutputLayer(int numNeurons, double eta, Random random, double alpha, int inputSize){
 		super(numNeurons, eta, random, alpha, 1, inputSize);
-	}
-
-	/**
-	 * set target values.
-	 * @param targets target value vector (double[])
-	 */
-	public void setTargets(double[] targets) {
-		this.targets = targets;		
+		if (logger.getLevel().equals(Level.INFO))
+			logger.info("Instantiate Output Layer --- " + "# Neurons: "
+					+ numNeurons + "\tLearning Rate: " + eta + "\tK: " + 1
+					+ "\tInput Size: " + inputSize + "\n");
 	}
 
 	/**
@@ -98,7 +97,11 @@ public class OutputLayer extends Layer {
 			throw new Exception("Ouput layer must have one input.");
 		}
 		
-		this.input = input.get(0);
+		this.input = Arrays.copyOf(input.get(0), input.get(0).length+1); // plus bias input
+		this.input[input.get(0).length] = 1;
+		
+		if(logger.getLevel().equals(Level.INFO))
+			logger.info("Added Input: " + BPTT.printArray(this.input));
 		
 		for(Neuron neuron : super.getNeurons()){
 			neuron.setInput(this.input);
@@ -106,10 +109,16 @@ public class OutputLayer extends Layer {
 		
 	}
 
+	/**
+	 * set # neurons in the lower layer
+	 * @param numNeurons # neurons in the lower layer (int)
+	 */
 	public void setNumHiddenNeurons(int numNeurons){
+		if(logger.getLevel().equals(Level.INFO))
+			logger.info("# Hidden Neurons: " + numNeurons);
 		this.numLowerNeurons = numNeurons;
 	}
-	
+			
 	/**
 	 * compute error rates, based on delta_j = (t_j - o_j) o_j (1 - o_j).
 	 * delta_j: error rate, which will be stored in errorRates vector (double[])
@@ -137,7 +146,7 @@ public class OutputLayer extends Layer {
 	 * (t_i - o_i): t is a target value, o is an output of a neuron i.
 	 */
 	protected void computeErrors() {
-		double[] errors = new double[this.targets.length];
+		double[] errors = new double[super.getTargets().length];
 		
 		try{
 			double[] outputs = super.getOutput();
@@ -150,8 +159,13 @@ public class OutputLayer extends Layer {
 				throw new Exception("Ouput and target vectors should be the same length.");
 			}
 			
+			double[] targets = super.getTargets();
+			
 			for(int i = 0; i < errors.length; i++){
-				errors[i] = this.targets[i] - outputs[i];
+				errors[i] = targets[i] - outputs[i];
+				if(logger.getLevel().equals(Level.FINE)){
+					logger.info("Target: " + targets[i] + " Prediction: " + outputs[i] + " Error: " + errors[i]);
+				}
 			}
 		}
 		catch(Exception e){
@@ -194,6 +208,9 @@ public class OutputLayer extends Layer {
 		}
 		
 		// convert the ArrayList<Double> to double[]
+		if(logger.getLevel().equals(Level.INFO)){
+			logger.info("The error vector from output layer: " + BPTT.printArray(ArrayUtils.toPrimitive(errors.toArray(new Double[errors.size()]))));
+		}
 		return ArrayUtils.toPrimitive(errors.toArray(new Double[errors.size()]));
 	}
 	

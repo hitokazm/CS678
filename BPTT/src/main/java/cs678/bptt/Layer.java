@@ -14,6 +14,7 @@ public abstract class Layer {
 	private Neuron[] neurons; // neurons in the layer
 	private double[] output; // output values from this layer
 	private double[] errorRates; // error rates (deltas) of the neurons in this layer
+	private double[] targets; // target values
 	
 	private final static Logger logger = Main.logger;
 	
@@ -105,8 +106,10 @@ public abstract class Layer {
 	 */
 	public double[] getOutput() throws Exception {
 		
+		this.output = new double[this.neurons.length];
+		
 		for(int i = 0; i < this.neurons.length; i++){
-			output[i] = this.neurons[i].getOutput();
+			this.output[i] = this.neurons[i].getOutput();
 		}
 		
 		return this.output;
@@ -138,6 +141,22 @@ public abstract class Layer {
 		for(Neuron neuron : this.neurons){
 			neuron.setWeights(size);
 		}
+	}
+	
+	/**
+	 * set target values.
+	 * @param targets target value vector (double[])
+	 */
+	public void setTargets(double[] targets) {
+		this.targets = targets;		
+	}
+
+	/**
+	 * get target values
+	 * @return target (double[])
+	 */
+	protected double[] getTargets(){
+		return this.targets;
 	}
 	
 	/**

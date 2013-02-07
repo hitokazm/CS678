@@ -11,7 +11,9 @@ public class Main
 {
 	
 	protected final static Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
-	protected final static Level logLevel = Level.INFO;
+	protected final static Level logLevel = Level.OFF;
+	
+	private final static String filename = "activity";
 	
     public static void main( String[] args ) throws Exception
     {
@@ -23,8 +25,32 @@ public class Main
 //		small.print();
     	
     	logger.setLevel(logLevel);
+    
+    	int k = 2;
     	
-    	Layer layer = new OutputLayer(2, 0.1, new Random(), 0.5, 10);
-    	Layer layer2 = new HiddenLayer(2, 0.1, new Random(), 0.9, 2, 10);
+		Matrix data = new Matrix();
+		if(filename.equals("activity"))
+			//data.loadArff("data/activity-5cols.arff");
+			data.loadArff("data/stocks.arff");
+		else
+			data.loadArff("data/fake.arff");
+		
+		Matrix features = new Matrix(data, 0, 0, data.rows(), data.cols() - 1);
+		
+		if(filename.equals("activity")){
+			//features = new Matrix(features, 0, 3, features.rows(), 3);
+			features.normalize();
+		}
+		
+		Matrix labels = new Matrix(data, 0, data.cols() - 1, data.rows(), 1);
+		
+		//features.normalize();
+		
+		BPTT learner = new BPTT(k);
+		
+		learner.train(features, labels);
+
+
+    	
     }
 }
