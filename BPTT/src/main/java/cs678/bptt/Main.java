@@ -26,12 +26,12 @@ public class Main
     	
     	logger.setLevel(logLevel);
     
-    	int k = 2;
+    	int k = 10;
     	
 		Matrix data = new Matrix();
 		if(filename.equals("activity"))
-			//data.loadArff("data/activity-5cols.arff");
-			data.loadArff("data/stocks.arff");
+			data.loadArff("data/activity-5cols.arff");
+			//data.loadArff("data/sensor_readings.arff");
 		else
 			data.loadArff("data/fake.arff");
 		
@@ -43,8 +43,6 @@ public class Main
 		}
 		
 		Matrix labels = new Matrix(data, 0, data.cols() - 1, data.rows(), 1);
-		
-		//features.normalize();
 		
 		BPTT learner = new BPTT(k);
 		

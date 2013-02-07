@@ -16,6 +16,7 @@ import java.util.logging.Logger;
 
 import cs678.tools.Matrix;
 import cs678.tools.SupervisedLearner;
+import edu.byu.nlp.trees.Tree;
 import edu.byu.nlp.util.Pair;
 
 public class BPTT extends SupervisedLearner {
@@ -55,7 +56,7 @@ public class BPTT extends SupervisedLearner {
 	 * constructor
 	 */
 	public BPTT(){
-		this.learningRate = 0.01; // default value
+		this.learningRate = 0.5; // default value
 		this.momentum = 0.9; // default value 
 		this.random = new Random(seed);
 		this.numHiddenNodes = 0;
@@ -160,41 +161,74 @@ public class BPTT extends SupervisedLearner {
 	public void train(Matrix features, Matrix labels) throws Exception {
 		// for data collection
 		Map<Integer, Double> accuracy = new TreeMap<Integer, Double>();
+		Map<Integer, Double> kestimate = new TreeMap<Integer, Double>();
+		double bestAcc = 0;
+		int bestK = this.k;
+		
+		int noImprovement = 0;
 		
 		// pre-process data sets
 		
 		this.createDataset(features, labels);
 		
-		// create hidden layer
-		int inputSize = features.cols()*3+1; // #features (actual input size) + # hidden neurons (2 * #features) + 1 (bias)
-		this.numHiddenNodes = features.cols() * 2; // # features * 2
-		Layer hiddenLayer = new HiddenLayer(this.numHiddenNodes, this.learningRate, random, this.momentum, this.k, inputSize);
-		
-		// create output layer
-		inputSize = features.cols() * 2 + 1; // # hidden neurons (2 * #features) + 1 (bias)
-		this.setNumOutputNodes(labels); // compute # output nodes
-		Layer outputLayer = new OutputLayer(this.numOutputNodes, this.learningRate, this.random, this.momentum, inputSize);
-		((OutputLayer) outputLayer).setNumHiddenNeurons(hiddenLayer.getNumNeurons());
-	
-		// put layers in an array (very redundant. fix this in the future)
-		this.layers = new Layer[2];
-		layers[0] = hiddenLayer;
-		layers[1] = outputLayer;
-		
-		for(int i = 0; i < 100; i++){
-			feedforward();
-			backpropagation();
-			double acc = this.measureAccuracy(this.trainFeatures, this.trainTestLabels, this.trainLabels, null);
-			accuracy.put(i+1, acc);
-			if(i % 2 == 0){
-				System.out.printf("Sample Size: %d    Accuracy: %.2f\n", i+1, acc);
+		for(int j = 1; j < 1000; j++){
+			// create hidden layer
+			int inputSize = features.cols()*3+1; // #features (actual input size) + # hidden neurons (2 * #features) + 1 (bias)
+			this.numHiddenNodes = features.cols() * 2; // # features * 2
+			Layer hiddenLayer = new HiddenLayer(this.numHiddenNodes, this.learningRate, random, this.momentum, this.k, inputSize);
+
+			// create output layer
+			inputSize = features.cols() * 2 + 1; // # hidden neurons (2 * #features) + 1 (bias)
+			this.setNumOutputNodes(labels); // compute # output nodes
+			Layer outputLayer = new OutputLayer(this.numOutputNodes, this.learningRate, this.random, this.momentum, inputSize);
+			((OutputLayer) outputLayer).setNumHiddenNeurons(hiddenLayer.getNumNeurons());
+
+			// put layers in an array (very redundant. fix this in the future)
+			this.layers = new Layer[2];
+			layers[0] = hiddenLayer;
+			layers[1] = outputLayer;
+
+			for(int i = 0; i < 100; i++){
+				feedforward();
+				backpropagation();
+				//double acc = this.measureAccuracy(this.trainFeatures, this.trainTestLabels, this.trainLabels, null);
+				//accuracy.put(i+1, acc);
+				//if(i % 2 == 0){
+				//	System.out.printf("Sample Size: %d    Accuracy: %.2f\n", i+1, acc);
 			}
+			double acc = this.averageAccuracy();
+			if(bestAcc < acc){
+				bestAcc = acc;
+				bestK = this.k;
+				kestimate.put(j, (double) k);
+			}
+			else{
+				kestimate.put(j, (double) k);
+				this.k++;
+				//noImprovement++;
+				//if(noImprovement > 100)
+				//	break;
+			}
+			System.out.printf("iteration: " + j + " current K: " + bestK + " current acc: " + bestAcc);
+			System.out.println();
+			
 		}
-		String filename = "stocks-" + k +".csv";
-		this.exportCSV(accuracy, filename);
+		String filename = "estimate-k.csv";
+		this.exportCSV(kestimate, filename);
 		//logger.info("Training Accuracy: " + this.measureAccuracy(this.trainFeatures, this.trainTestLabels, this.trainLabels, null));
 	}
 
+	private double averageAccuracy() throws Exception {
+		double sum = 0;
+		double acc;
+		int max = 20;
+		for(int i = 0; i < max; i++){
+			acc = this.measureAccuracy(this.trainFeatures, this.trainTestLabels, this.trainLabels, null);
+			sum += acc;
+		}
+		return ((double) sum / (double) max);
+	}
+	
 	/**
 	 * feed-forward process.
 	 * @return a output value provided by the output layer.
