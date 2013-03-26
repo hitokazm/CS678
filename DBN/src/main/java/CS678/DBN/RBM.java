@@ -1,5 +1,7 @@
 package CS678.DBN;
 
+import java.io.FileOutputStream;
+import java.io.ObjectOutputStream;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -7,6 +9,9 @@ import cs678.tools.Matrix;
 
 public class RBM {
 
+	static final boolean printout = false;
+	static final boolean printout2 = true;
+	
 	Matrix inputs; // samples or original inputs
 	double learningRate; // epsilon
 	double[][] weights; // weights (dim of # hidden nodes x # input nodes)
@@ -26,9 +31,15 @@ public class RBM {
 	int numVisibleNodes;
 	int layerNum; 
 
+	int smallest;
+	
+	double stoppingCriteria;
+	double threshold;
+	
 	Random rand;
 	
 	public RBM(){
+		this.smallest = 1000000;
 		this.rand = new Random(10000L);
 		learningRate = 0.01;
 	}
@@ -42,25 +53,49 @@ public class RBM {
 		this(inputs);
 		this.numHiddenNodes = numHiddenNodes;
 		this.numVisibleNodes = numVisibleNodes;
+		this.h1 = new double[this.numHiddenNodes];
+		this.h2 = new double[this.numHiddenNodes];
+		this.x1 = new double[this.numVisibleNodes];
+		this.x2 = new double[this.numVisibleNodes];
 	}
 	
 	public RBM(Matrix inputs, int numHiddenNodes, int numVisibleNodes, int layerNum){
 		this(inputs, numHiddenNodes, numVisibleNodes);
 		this.layerNum = layerNum;
 		this.setInitialWeights();
-		this.setVisibleBias();
 		this.setHiddenBias();
 		this.Q1 = new double[this.numHiddenNodes];
 		this.P = new double[this.numVisibleNodes];
 		this.Q2 = new double[this.numHiddenNodes];
 	}
 	
+	public RBM(Matrix inputs, int numHiddenNodes, int numVisibleNodes, int layerNum, 
+			double stoppingCriteria){
+		this(inputs, numHiddenNodes, numVisibleNodes, layerNum);
+		this.stoppingCriteria = stoppingCriteria;
+	}
+	
+	public RBM(Matrix inputs, int numHiddenNodes, int numVisibleNodes, int layerNum, 
+			double stoppingCriteria, double threshold){
+		this(inputs, numHiddenNodes, numVisibleNodes, layerNum, stoppingCriteria);
+		this.threshold = threshold;
+	}
 	
 	public void setInitialWeights(){
 		this.weights = new double[this.numHiddenNodes][this.numVisibleNodes];
 		this.deltas = new double[this.numHiddenNodes][this.numVisibleNodes];
 		for(int i = 0; i < this.weights.length; i++){
 			this.setInitialWeights(this.weights[i]);
+		}
+		if(printout){
+			for(int i = 0; i < this.weights.length; i++){
+				System.out.printf("w%d: ", i);
+				for(int j = 0; j < this.weights[i].length; j++){
+					System.out.printf("%.3f ", this.weights[i][j]);
+				}
+				System.out.println();
+			}
+			System.out.println();
 		}
 	}
 	
@@ -69,35 +104,80 @@ public class RBM {
 			double w;
 			do{
 				w = this.rand.nextGaussian();
-			}while(w == 0.0 || w > 0.1 || w < -0.1);
+			}while(w == 0.0 || w > 0.01 || w < -0.01);
 			weights[i] = w;
 		}
 	}
 	
 	public void setVisibleBias(){
 		this.b = new double[this.numVisibleNodes];
+		
+		double[] counts = new double[this.numVisibleNodes];
+		
+		for(int row = 0; row < this.inputs.rows(); row++){
+			for(int col = 0; col < this.inputs.row(row).length - 1; col++){
+				if(this.inputs.row(row)[col] > 0){
+					counts[col] += 1.0;
+				}
+			}
+		}
+		
+		double maximum = 0;
+		for(int i = 0; i < counts.length; i++){
+			if(maximum < counts[i]){
+				maximum = counts[i];
+			}
+		}
+		
+		for(int i = 0; i < counts.length; i++){
+			this.b[i] = counts[i] / maximum * 0.1;
+		}
+		
 		this.setInitialWeights(this.b);
+		if(printout){
+			System.out.print("b: ");
+			for(double w : this.b){
+				System.out.printf("%.3f ", w);
+			}
+			System.out.println();
+		}
 	}
 	
 	public void setHiddenBias(){
 		this.c = new double[this.numHiddenNodes];
-		this.setInitialWeights(this.c);
-	}
-	
-	public double sigmoid(double bias, double[][] weights, int index, double[] vector, boolean row){
-		if(row)
-			return bias + this.dotProductOf(weights[index], vector); // for Q probability (row iteration)
-		else{
-			double sum = 0;
-			for(int i = 0; i < weights.length; i++){
-				sum += weights[i][index] * vector[i]; // for P probability (column iteration)
+		for(int i = 0; i < this.c.length; i++){
+			this.c[i] = 0;
+		}
+		if(printout){
+			System.out.print("c: ");
+			for(double w : this.c){
+				System.out.printf("%.3f ", w);
 			}
-			return bias + sum;
+			System.out.println("\n");
 		}
 	}
 	
+	public double sigmoid(double bias, double[][] weights, int index, double[] vector, boolean row) throws Exception{
+		
+		double net;
+		if(row){
+			net = bias + this.dotProductOf(weights[index], vector); // for Q probability (row iteration)
+		}
+		else{
+			net = 0;
+			for(int i = 0; i < weights.length; i++){
+				net += weights[i][index] * vector[i]; // for P probability (column iteration)
+			}
+			net += bias;
+		}
+		return 1 / (1 + Math.exp(-1.0 * net));
+	}
 	
-	public double dotProductOf(double[] vector1, double[] vector2){
+	
+	public double dotProductOf (double[] vector1, double[] vector2) throws Exception{
+		
+		if(vector1.length != vector2.length)
+			throw new Exception("Vector1: " + vector1.length + " Vector 2: " + vector2.length + "   Lengths are different.");
 		
 		double sum = 0;
 		for(int i = 0; i < vector1.length; i++){
@@ -109,7 +189,7 @@ public class RBM {
 	
 	private double[] createInputFeatureVector(double[] row) {
 		
-		double[] inputFeautureVector = Arrays.copyOf(row, row.length);
+		double[] inputFeautureVector = Arrays.copyOf(row, row.length-1);
 		return inputFeautureVector;
 		
 	}
@@ -132,44 +212,210 @@ public class RBM {
 		return colArray;
 	}
 	
-	public void update(){
+	public void update() throws Exception{
+
+		this.setVisibleBias();
+
 		
-		this.x1 = this.createInputFeatureVector(this.inputs.row(1));
-		
-		for(int i = 0; i < this.Q1.length; i++){
-			this.Q1[i] = this.sigmoid(this.c[i], this.weights, i, this.x1, true);
-			this.h1[i] = this.sample(this.Q1[i]);
+		for(int row = 0; row < this.inputs.rows(); row++){
+			this.x1 = this.createInputFeatureVector(this.inputs.row(row));
+			for(int i = 0; i < this.Q1.length; i++){
+				this.Q1[i] = this.sigmoid(this.c[i], this.weights, i, this.x1, true);
+				this.h1[i] = this.sample(this.Q1[i]);
+				if(printout)
+					System.out.printf("Q1[%d]: %.3f   Sample: %.0f\n\n", i, this.Q1[i], h1[i]);
+			}
+			
+			for(int j = 0; j < this.P.length; j++){
+				this.P[j] = this.sigmoid(this.b[j], this.weights, j, this.h1, false);
+				this.x2[j] = this.sample(this.P[j]);
+				if(printout)
+					System.out.printf("P[%d]: %.3f   Sample: %.0f\n\n", j, this.P[j], x2[j]);
+			}
+			
+			for(int i = 0; i < this.Q2.length; i++){
+				this.Q2[i] = this.sigmoid(this.c[i], this.weights, i, this.x2, true);
+				if(printout)
+					System.out.printf("Q2[%d]: %.3f\n\n", i, this.Q2[i]);
+			}
+			
+			if(this.updateWeights()){
+				if(printout2){
+					System.out.printf("No more updates needed. Done at row %d.\n\n", (row+1));
+				}
+				break;
+			}
+			else{
+				if(printout)
+					System.out.println("More updates needed. Continue.\n");
+			}
 		}
-		
-		for(int j = 0; j < this.P.length; j++){
-			this.P[j] = this.sigmoid(this.b[j], weights, j, this.h1, false);
-			this.x2[j] = this.sample(this.P[j]);
-		}
-		
-		for(int i = 0; i < this.Q2.length; i++){
-			this.Q2[i] = this.sigmoid(this.c[i], this.weights, i, this.x2, true);
-		}
-		
-		this.updateWeights();
-		
 	}
 
-	private void updateWeights() {
+	public Matrix nextInputs() throws Exception{
+		
+		Matrix next = new Matrix(0, this.Q2.length);
+		next.setOutputClass("class", 9);
+		
+		this.inputs.shuffle(this.rand);
+
+		System.out.println("Create Next Input.");
+		
+		for(int row = 0; row < 20000; row++){
+			this.x1 = this.createInputFeatureVector(this.inputs.row(row));
+			double[] features = new double[this.Q2.length+1];
+			
+			for(int i = 0; i < this.Q1.length; i++){
+				this.Q1[i] = this.sigmoid(this.c[i], this.weights, i, this.x1, true);
+				this.h1[i] = this.sample(this.Q1[i]);
+			}
+			
+			for(int j = 0; j < this.P.length; j++){
+				this.P[j] = this.sigmoid(this.b[j], this.weights, j, this.h1, false);
+				this.x2[j] = this.sample(this.P[j]);
+			}
+			
+			for(int i = 0; i < this.Q2.length; i++){
+				this.Q2[i] = this.sigmoid(this.c[i], this.weights, i, this.x2, true);
+				features[i] = this.sample(this.Q2[i]);
+			}
+			features[this.Q2.length] = this.inputs.get(row, this.inputs.cols()-1);
+			next.addRow(features);
+		}
+		
+		System.out.println("Export Next Input.");
+		
+		String outFile = "rbm" + this.layerNum + ".matrix";
+		ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("data/" + outFile));
+		oos.writeObject(next);
+		oos.close();
+
+		System.out.println("Finished Exporting.");
+		
+		this.inputs = null;
+		
+		return next;
+	}
+	
+	public Matrix convertTestSet(Matrix testset) throws Exception{
+		
+		double[] max = new double[this.inputs.cols()];
+		double[] min = new double[this.inputs.cols()];
+		for(int col = 0; col < max.length; col++){
+			max[col] = this.inputs.columnMax(col);
+			min[col] = this.inputs.columnMin(col);
+		}
+		
+		testset.normalize(min, max);
+				
+		Matrix newTest = new Matrix(0, this.Q2.length);
+		newTest.setOutputClass("class", 9);
+
+		System.out.println("Create New Testset.");
+		
+		for(int row = 0; row < testset.rows(); row++){
+			this.x1 = this.createInputFeatureVector(testset.row(row));
+			double[] features = new double[this.Q2.length+1];
+			
+			for(int i = 0; i < this.Q1.length; i++){
+				this.Q1[i] = this.sigmoid(this.c[i], this.weights, i, this.x1, true);
+				this.h1[i] = this.sample(this.Q1[i]);
+			}
+			
+			for(int j = 0; j < this.P.length; j++){
+				this.P[j] = this.sigmoid(this.b[j], this.weights, j, this.h1, false);
+				this.x2[j] = this.sample(this.P[j]);
+			}
+			
+			for(int i = 0; i < this.Q2.length; i++){
+				this.Q2[i] = this.sigmoid(this.c[i], this.weights, i, this.x2, true);
+				features[i] = this.sample(this.Q2[i]);
+			}
+			features[this.Q2.length] = testset.get(row, testset.cols()-1);
+			newTest.addRow(features);
+		}
+		
+		System.out.println("Export New Testset.");
+		
+		String outFile = "testset" + this.layerNum + ".matrix";
+		ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("data/" + outFile));
+		oos.writeObject(newTest);
+		oos.close();
+
+		System.out.println("Finished Exporting.");
+		
+		return newTest;
+		
+	}
+	
+	private boolean updateWeights() {
+		
+		boolean stop = false;
+		int counter = 0;
 		
 		for(int i = 0; i < this.numHiddenNodes; i++){
 			for(int j = 0; j < this.numVisibleNodes; j++){
 				this.deltas[i][j] = this.learningRate * (this.h1[i] * this.x1[j] - 
 						this.Q2[i] * this.x2[j]);
+				this.weights[i][j] += this.deltas[i][j];
+				if(Math.abs(this.deltas[i][j]) > this.stoppingCriteria){
+					counter++;
+					//if(stop){
+					if(printout){
+						if(Math.abs(this.deltas[i][j]) == .01 && printout2){
+							System.out.printf("h1[%d]: %.2f  " +
+									"x1[%d]: %.2f  Q2[%d]: %.2f  x2[%d]: %.2f\n", 
+									i, h1[i], j, x1[j], i, Q2[i], j, x2[j]);
+						}
+						System.out.printf("dw[%d][%d]: %f > %f\n\n", i,j,
+								Math.abs(this.deltas[i][j]), 
+								this.stoppingCriteria);
+					}
+					//stop = false;
+					//}
+				}
+				if(printout)
+					System.out.printf("dw[%d][%d]: %.3f ", i, j, this.deltas[i][j]);
+			}
+			if(printout)
+				System.out.println("\n");
+		}
+		
+		if(printout)
+			System.out.print("b: ");
+		for(int i = 0; i < this.b.length; i++){
+			this.b[i] += this.learningRate * (this.x1[i] - this.x2[i]);			
+			if(printout)
+				System.out.printf("%.3f ", b[i]);
+		}
+		if(printout)
+			System.out.println("\n");
+		
+		if(printout)
+			System.out.print("c: ");
+		for(int j = 0; j < this.c.length; j++){
+			this.c[j] += this.learningRate * (this.h1[j] - this.Q2[j]);
+			if(printout)
+				System.out.printf("%.3f ", c[j]);
+		}
+		if(printout)
+			System.out.println("\n");
+		
+		double percent = 0;
+		if(this.smallest > counter){
+			this.smallest = counter;
+			percent = (double) this.smallest / 
+					(double) (this.numHiddenNodes * this.numVisibleNodes) * 100;
+			if(printout2){
+				System.out.println("< Threshold Count: " + this.smallest + " (" + 
+						percent +  "%)");
+		}
+			if(percent < this.threshold){
+				stop = true;
 			}
 		}
 		
-		for(int i = 0; i < this.b.length; i++){
-			this.b[i] += this.learningRate * (this.x1[i] - this.x2[i]);
-		}
-		
-		for(int j = 0; j < this.c.length; j++){
-			this.c[j] += this.learningRate * (this.h1[j] - this.Q2[j]);
-		}
+		return stop;
 		
 	}
 	

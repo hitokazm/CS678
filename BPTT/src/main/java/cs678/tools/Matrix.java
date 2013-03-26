@@ -6,16 +6,21 @@ package cs678.tools;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Formatter;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Random;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.Map.Entry;
 
-public class Matrix {
+public class Matrix implements Serializable {
+	private static final long serialVersionUID = 1L;
+	
 	// Data
 	ArrayList< double[] > m_data;
 
@@ -30,6 +35,34 @@ public class Matrix {
 	// Creates a 0x0 matrix. You should call loadARFF or setSize next.
 	public Matrix() {}
 
+	// Creates a rowsxcols empty matrix. 
+	public Matrix(int rows, int cols){
+		this.setSize(rows, cols);
+		m_attr_name = new ArrayList<String>();
+		m_str_to_enum = new ArrayList< TreeMap<String, Integer> >();
+		m_enum_to_str = new ArrayList< TreeMap<Integer, String> >();
+		for(int col = 0; col < cols; col++){
+			String name = "attr" + (col+1);
+			m_attr_name.add(name);
+			TreeMap<String, Integer> ste = new TreeMap<String, Integer>();
+			TreeMap<Integer, String> ets = new TreeMap<Integer, String>();
+			m_str_to_enum.add(ste);
+			m_enum_to_str.add(ets);
+		}
+	}
+
+	public void setOutputClass(String name, int maxValue){
+		m_attr_name.add(name);
+		TreeMap<String, Integer> ste = new TreeMap<String, Integer>();
+		TreeMap<Integer, String> ets = new TreeMap<Integer, String>();
+		for(int v = 0; v <= maxValue; v++){
+			ste.put(String.valueOf(v), new Integer(v));
+			ets.put(new Integer(v), String.valueOf(v));
+		}
+		m_str_to_enum.add(ste);
+		m_enum_to_str.add(ets);
+	}
+	
 	// Copies the specified portion of that matrix into this matrix
 	public Matrix(Matrix that, int rowStart, int colStart, int rowCount, int colCount) {
 		m_data = new ArrayList< double[] >();
@@ -359,7 +392,7 @@ public class Matrix {
 			double[] r = row(i);
 			for(int j = 0; j < r.length; j++) {
 				if(j > 0)
-					System.out.print(", ");
+					System.out.print(",");
 				if(valueCount(j) == 0)
 					System.out.print(r[j]);
 				else
@@ -367,6 +400,43 @@ public class Matrix {
 			}
 			System.out.println("");
 		}
+	}
+	
+
+	public String export() {
+		Formatter formatter = new Formatter(new StringBuilder());
+		
+		formatter.format("@RELATION Untitled\n");
+		for(int i = 0; i < m_attr_name.size(); i++) {
+			formatter.format("@ATTRIBUTE " + m_attr_name.get(i));
+			int vals = valueCount(i);
+			if(vals == 0)
+				formatter.format(" CONTINUOUS\n");
+			else
+			{
+				formatter.format(" {");
+				for(int j = 0; j < vals; j++) {
+					if(j > 0)
+						formatter.format(", ");
+					formatter.format(m_enum_to_str.get(i).get(j));
+				}
+				formatter.format("}\n");
+			}
+		}
+		formatter.format("@DATA\n");
+		for(int i = 0; i < rows(); i++) {
+			double[] r = row(i);
+			for(int j = 0; j < r.length; j++) {
+				if(j > 0)
+					formatter.format(",");
+				if(valueCount(j) == 0)
+					formatter.format("%.1f", r[j]);
+				else
+					formatter.format(m_enum_to_str.get(j).get((int)r[j]));
+			}
+			formatter.format("\n");
+		}
+		return formatter.toString();
 	}
 	
 	
@@ -397,7 +467,7 @@ public class Matrix {
 			m_enum_to_str.add(that.m_enum_to_str.get(colStart + i));
 		}
 	}
-
+	
 	// get the actual value count in the column
 	// I added this for decision tree
 	public int getActualValueCount(int col) {

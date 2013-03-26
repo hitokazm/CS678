@@ -58,7 +58,7 @@ public class BPTT extends SupervisedLearner {
 	public BPTT(){
 		this.learningRate = 0.5; // default value
 		this.momentum = 0.9; // default value 
-		this.random = new Random(seed);
+		this.random = new Random();
 		this.numHiddenNodes = 0;
 		this.numOutputNodes = 0;
 	}
@@ -171,7 +171,7 @@ public class BPTT extends SupervisedLearner {
 		
 		this.createDataset(features, labels);
 		
-		for(int j = 1; j < 1000; j++){
+		for(int j = 1; j < 100; j++){
 			// create hidden layer
 			int inputSize = features.cols()*3+1; // #features (actual input size) + # hidden neurons (2 * #features) + 1 (bias)
 			this.numHiddenNodes = features.cols() * 2; // # features * 2
@@ -200,16 +200,16 @@ public class BPTT extends SupervisedLearner {
 			if(bestAcc < acc){
 				bestAcc = acc;
 				bestK = this.k;
-				kestimate.put(j, (double) k);
+				kestimate.put(j, (double) bestK);
 			}
 			else{
-				kestimate.put(j, (double) k);
+				kestimate.put(j, (double) bestK);
 				this.k++;
 				//noImprovement++;
 				//if(noImprovement > 100)
 				//	break;
 			}
-			System.out.printf("iteration: " + j + " current K: " + bestK + " current acc: " + bestAcc);
+			System.out.printf("iteration: " + j + " current best K: " + bestK + " current best acc: " + bestAcc);
 			System.out.println();
 			
 		}
