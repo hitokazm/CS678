@@ -72,7 +72,7 @@ public class DBN implements Serializable {
 						(i+1), this.criteria[i], this.thresholds[i], maxSampleSize);
 			else
 				this.rbms[i] = new RBM(data, this.numHiddenNodes[i], data.cols()-1, 
-						(i+1), this.criteria[i], this.thresholds[i], 60000);
+						(i+1), this.criteria[i], this.thresholds[i], 80000);
 				
 			this.rbms[i].update();
 			testData = this.rbms[i].convertTestSet(testData);
