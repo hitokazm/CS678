@@ -8,7 +8,7 @@ import java.util.Random;
 import cs678.tools.Matrix;
 
 public class RBM {
-
+	
 	static final boolean printout = false;
 	static final boolean printout2 = true;
 	
@@ -27,10 +27,12 @@ public class RBM {
 	double[] P;  // probability P(x2|h1)
 	double[] Q2; // probability Q(h2|x2)
 	
+	double[][] bestWeights; // best weights
+	
 	int numHiddenNodes;
 	int numVisibleNodes;
 	int layerNum; 
-
+	int maxSampleSize;
 	int smallest;
 	
 	double stoppingCriteria;
@@ -81,11 +83,21 @@ public class RBM {
 		this.threshold = threshold;
 	}
 	
+	public RBM(Matrix inputs, int numHiddenNodes, int numVisibleNodes, int layerNum, 
+			double stoppingCriteria, double threshold, int maxSampleSize){
+		this(inputs, numHiddenNodes, numVisibleNodes, layerNum, stoppingCriteria, threshold);
+		this.maxSampleSize = maxSampleSize;
+	}
+	
 	public void setInitialWeights(){
 		this.weights = new double[this.numHiddenNodes][this.numVisibleNodes];
 		this.deltas = new double[this.numHiddenNodes][this.numVisibleNodes];
+		
+		this.bestWeights = new double[this.numHiddenNodes][this.numVisibleNodes];
+		
 		for(int i = 0; i < this.weights.length; i++){
 			this.setInitialWeights(this.weights[i]);
+			this.setInitialWeights(this.bestWeights[i]);
 		}
 		if(printout){
 			for(int i = 0; i < this.weights.length; i++){
@@ -212,32 +224,45 @@ public class RBM {
 		return colArray;
 	}
 	
+	public void CD1(boolean sampling, boolean useProbability, double[] features) throws Exception{
+
+		for(int i = 0; i < this.Q1.length; i++){
+			this.Q1[i] = this.sigmoid(this.c[i], this.weights, i, this.x1, true);
+			this.h1[i] = this.sample(this.Q1[i]);
+			if(printout)
+				System.out.printf("Q1[%d]: %.3f   Sample: %.0f\n\n", i, this.Q1[i], h1[i]);
+		}
+		
+		for(int j = 0; j < this.P.length; j++){
+			this.P[j] = this.sigmoid(this.b[j], this.weights, j, this.h1, false);
+			this.x2[j] = this.sample(this.P[j]);
+			if(printout)
+				System.out.printf("P[%d]: %.3f   Sample: %.0f\n\n", j, this.P[j], x2[j]);
+		}
+		
+		for(int i = 0; i < this.Q2.length; i++){
+			this.Q2[i] = this.sigmoid(this.c[i], this.weights, i, this.x2, true);
+			if(sampling){
+				if(useProbability){
+					features[i] = this.Q2[i];//this.sample(this.Q2[i]);
+				}
+				else{
+					features[i] = this.sample(this.Q2[i]);
+				}
+			}
+			if(printout)
+				System.out.printf("Q2[%d]: %.3f\n\n", i, this.Q2[i]);
+		}
+
+	}
+	
 	public void update() throws Exception{
 
 		this.setVisibleBias();
-
 		
 		for(int row = 0; row < this.inputs.rows(); row++){
 			this.x1 = this.createInputFeatureVector(this.inputs.row(row));
-			for(int i = 0; i < this.Q1.length; i++){
-				this.Q1[i] = this.sigmoid(this.c[i], this.weights, i, this.x1, true);
-				this.h1[i] = this.sample(this.Q1[i]);
-				if(printout)
-					System.out.printf("Q1[%d]: %.3f   Sample: %.0f\n\n", i, this.Q1[i], h1[i]);
-			}
-			
-			for(int j = 0; j < this.P.length; j++){
-				this.P[j] = this.sigmoid(this.b[j], this.weights, j, this.h1, false);
-				this.x2[j] = this.sample(this.P[j]);
-				if(printout)
-					System.out.printf("P[%d]: %.3f   Sample: %.0f\n\n", j, this.P[j], x2[j]);
-			}
-			
-			for(int i = 0; i < this.Q2.length; i++){
-				this.Q2[i] = this.sigmoid(this.c[i], this.weights, i, this.x2, true);
-				if(printout)
-					System.out.printf("Q2[%d]: %.3f\n\n", i, this.Q2[i]);
-			}
+			this.CD1(false, false, null);
 			
 			if(this.updateWeights()){
 				if(printout2){
@@ -250,102 +275,82 @@ public class RBM {
 					System.out.println("More updates needed. Continue.\n");
 			}
 		}
+		this.weights = this.bestWeights;
 	}
 
 	public Matrix nextInputs() throws Exception{
-		
-		Matrix next = new Matrix(0, this.Q2.length);
-		next.setOutputClass("class", 9);
-		
-		this.inputs.shuffle(this.rand);
 
-		System.out.println("Create Next Input.");
-		
-		for(int row = 0; row < 20000; row++){
-			this.x1 = this.createInputFeatureVector(this.inputs.row(row));
-			double[] features = new double[this.Q2.length+1];
-			
-			for(int i = 0; i < this.Q1.length; i++){
-				this.Q1[i] = this.sigmoid(this.c[i], this.weights, i, this.x1, true);
-				this.h1[i] = this.sample(this.Q1[i]);
-			}
-			
-			for(int j = 0; j < this.P.length; j++){
-				this.P[j] = this.sigmoid(this.b[j], this.weights, j, this.h1, false);
-				this.x2[j] = this.sample(this.P[j]);
-			}
-			
-			for(int i = 0; i < this.Q2.length; i++){
-				this.Q2[i] = this.sigmoid(this.c[i], this.weights, i, this.x2, true);
-				features[i] = this.sample(this.Q2[i]);
-			}
-			features[this.Q2.length] = this.inputs.get(row, this.inputs.cols()-1);
-			next.addRow(features);
-		}
-		
-		System.out.println("Export Next Input.");
-		
-		String outFile = "rbm" + this.layerNum + ".matrix";
-		ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("data/" + outFile));
-		oos.writeObject(next);
-		oos.close();
-
-		System.out.println("Finished Exporting.");
-		
-		this.inputs = null;
-		
+		Matrix next = this.createNewDataset(this.inputs, false);
+				
 		return next;
 	}
 	
 	public Matrix convertTestSet(Matrix testset) throws Exception{
-		
-		double[] max = new double[this.inputs.cols()];
-		double[] min = new double[this.inputs.cols()];
-		for(int col = 0; col < max.length; col++){
-			max[col] = this.inputs.columnMax(col);
-			min[col] = this.inputs.columnMin(col);
-		}
-		
-		testset.normalize(min, max);
-				
-		Matrix newTest = new Matrix(0, this.Q2.length);
-		newTest.setOutputClass("class", 9);
 
-		System.out.println("Create New Testset.");
-		
-		for(int row = 0; row < testset.rows(); row++){
-			this.x1 = this.createInputFeatureVector(testset.row(row));
-			double[] features = new double[this.Q2.length+1];
-			
-			for(int i = 0; i < this.Q1.length; i++){
-				this.Q1[i] = this.sigmoid(this.c[i], this.weights, i, this.x1, true);
-				this.h1[i] = this.sample(this.Q1[i]);
-			}
-			
-			for(int j = 0; j < this.P.length; j++){
-				this.P[j] = this.sigmoid(this.b[j], this.weights, j, this.h1, false);
-				this.x2[j] = this.sample(this.P[j]);
-			}
-			
-			for(int i = 0; i < this.Q2.length; i++){
-				this.Q2[i] = this.sigmoid(this.c[i], this.weights, i, this.x2, true);
-				features[i] = this.sample(this.Q2[i]);
-			}
-			features[this.Q2.length] = testset.get(row, testset.cols()-1);
-			newTest.addRow(features);
-		}
-		
-		System.out.println("Export New Testset.");
-		
-		String outFile = "testset" + this.layerNum + ".matrix";
-		ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("data/" + outFile));
-		oos.writeObject(newTest);
-		oos.close();
-
-		System.out.println("Finished Exporting.");
+		Matrix newTest = this.createNewDataset(testset, true);
 		
 		return newTest;
 		
+	}
+	
+	private Matrix createNewDataset (Matrix original, boolean testset) throws Exception{
+
+		if(testset){
+			double[] max = new double[this.inputs.cols()];
+			double[] min = new double[this.inputs.cols()];
+			for(int col = 0; col < max.length; col++){
+				max[col] = this.inputs.columnMax(col);
+				min[col] = this.inputs.columnMin(col);
+			}
+			
+			original.normalize(min, max);			
+		}
+		
+		Matrix dataset = new Matrix(0, this.Q2.length);
+		dataset.setOutputClass("class", 9);
+
+		String outFile = "";
+		
+		if(testset){
+			System.out.println("Create New Testset.");
+			int maxRow = original.rows();
+			for(int row = 0; row < maxRow; row++){
+				this.x1 = this.createInputFeatureVector(original.row(row));
+				double[] features = new double[this.Q2.length+1];
+				this.CD1(true, true, features);
+				features[this.Q2.length] = original.get(row, this.inputs.cols()-1);
+				dataset.addRow(features);
+			}
+			System.out.println("Export New Testset.");
+			outFile = "testset" + this.layerNum + ".matrix";
+		}
+		else{
+			System.out.println("Create Next Input.");
+			int maxRow = maxSampleSize;
+			int datumCount = 0;
+			while(datumCount < maxRow){
+				original.shuffle(this.rand);
+				int row = this.rand.nextInt(original.rows());
+				this.x1 = this.createInputFeatureVector(this.inputs.row(row));
+				double[] features = new double[this.Q2.length+1];				
+				this.CD1(true, true, features);
+				features[this.Q2.length] = this.inputs.get(row, this.inputs.cols()-1);
+				dataset.addRow(features);
+				datumCount++;
+			}
+			System.out.println("Export Next Input.");			
+			outFile = "rbm" + this.layerNum + ".matrix";
+		}
+
+		ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("data/" + outFile));
+		oos.writeObject(dataset);
+		oos.close();
+		System.out.println("Finished Exporting.");
+
+		if(!testset)
+			this.inputs = null;
+
+		return dataset;
 	}
 	
 	private boolean updateWeights() {
@@ -406,6 +411,8 @@ public class RBM {
 			this.smallest = counter;
 			percent = (double) this.smallest / 
 					(double) (this.numHiddenNodes * this.numVisibleNodes) * 100;
+			for(int i = 0; i < this.weights.length; i++)
+				this.bestWeights[i] = this.weights[i].clone();
 			if(printout2){
 				System.out.println("< Threshold Count: " + this.smallest + " (" + 
 						percent +  "%)");

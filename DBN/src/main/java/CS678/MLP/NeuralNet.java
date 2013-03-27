@@ -143,9 +143,6 @@ public class NeuralNet extends SupervisedLearner{
 	@Override
 	public void train(Matrix features, Matrix labels) throws Exception {
 
-		// variables for analysis
-		Map<Integer, Double> mse = new HashMap<Integer, Double>(); // map for mean squared error
-		Map<Integer, Double> misclassification = new HashMap<Integer, Double>(); // map for mis-classification rate
 		/* 
 		 * initialize layers (hidden + output)
 		 */

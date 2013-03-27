@@ -10,6 +10,7 @@ public class DBN implements Serializable {
 
 	private RBM[] rbms;
 	private int layerCount;
+	private int maxSampleSize;
 	private Matrix trainingData, testData;
 	private int[] numHiddenNodes;
 	private double[] criteria;
@@ -52,6 +53,12 @@ public class DBN implements Serializable {
 		this.thresholds = thresholds;
 	}
 	
+	public DBN(int layerCount, Matrix trainingData, Matrix testData, int[] numHiddenNodes, 
+			double[] criteria, double[] thresholds, int maxSampleSize){
+		this(layerCount, trainingData, testData, numHiddenNodes, criteria, thresholds);
+		this.maxSampleSize = maxSampleSize;
+	}
+	
 	public void train() throws Exception{
 		
 		Matrix data = new Matrix();
@@ -60,8 +67,13 @@ public class DBN implements Serializable {
 			if(i == 0){
 				data = this.trainingData;				
 			}
-			this.rbms[i] = new RBM(data, this.numHiddenNodes[i], data.cols()-1, 
-					(i+1), this.criteria[i], this.thresholds[i]);
+			if(i == this.layerCount - 1)
+				this.rbms[i] = new RBM(data, this.numHiddenNodes[i], data.cols()-1, 
+						(i+1), this.criteria[i], this.thresholds[i], maxSampleSize);
+			else
+				this.rbms[i] = new RBM(data, this.numHiddenNodes[i], data.cols()-1, 
+						(i+1), this.criteria[i], this.thresholds[i], 60000);
+				
 			this.rbms[i].update();
 			testData = this.rbms[i].convertTestSet(testData);
 			data = this.rbms[i].nextInputs();
