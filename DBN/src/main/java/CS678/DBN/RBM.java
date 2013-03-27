@@ -270,7 +270,7 @@ public class RBM {
 			
 			if(this.updateWeights()){
 				if(printout2){
-					System.out.printf("No more updates needed. Done at %d iterations.\n\n", rowCount);
+					System.out.printf("No more updates needed. Finished in %d iterations.\n\n", rowCount);
 				}
 				break;
 			}
