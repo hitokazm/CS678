@@ -8,6 +8,8 @@ public class DBN implements Serializable {
 	
 	private static final long serialVersionUID = 1L;
 
+	static final int intrimSamplingSize = 10000;
+	
 	private RBM[] rbms;
 	private int layerCount;
 	private int maxSampleSize;
@@ -72,7 +74,7 @@ public class DBN implements Serializable {
 						(i+1), this.criteria[i], this.thresholds[i], maxSampleSize);
 			else
 				this.rbms[i] = new RBM(data, this.numHiddenNodes[i], data.cols()-1, 
-						(i+1), this.criteria[i], this.thresholds[i], 80000);
+						(i+1), this.criteria[i], this.thresholds[i], intrimSamplingSize);
 				
 			this.rbms[i].update();
 			testData = this.rbms[i].convertTestSet(testData);

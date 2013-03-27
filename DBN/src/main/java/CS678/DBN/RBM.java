@@ -11,6 +11,7 @@ public class RBM {
 	
 	static final boolean printout = false;
 	static final boolean printout2 = true;
+	static final boolean sampleFromProbabilities = true;
 	
 	Matrix inputs; // samples or original inputs
 	double learningRate; // epsilon
@@ -317,7 +318,7 @@ public class RBM {
 			for(int row = 0; row < maxRow; row++){
 				this.x1 = this.createInputFeatureVector(original.row(row));
 				double[] features = new double[this.Q2.length+1];
-				this.CD1(true, true, features);
+				this.CD1(true, sampleFromProbabilities, features);
 				features[this.Q2.length] = original.get(row, this.inputs.cols()-1);
 				dataset.addRow(features);
 			}
@@ -333,7 +334,7 @@ public class RBM {
 				int row = this.rand.nextInt(original.rows());
 				this.x1 = this.createInputFeatureVector(this.inputs.row(row));
 				double[] features = new double[this.Q2.length+1];				
-				this.CD1(true, true, features);
+				this.CD1(true, sampleFromProbabilities, features);
 				features[this.Q2.length] = this.inputs.get(row, this.inputs.cols()-1);
 				dataset.addRow(features);
 				datumCount++;
