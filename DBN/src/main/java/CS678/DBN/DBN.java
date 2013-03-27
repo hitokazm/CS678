@@ -8,7 +8,7 @@ public class DBN implements Serializable {
 	
 	private static final long serialVersionUID = 1L;
 
-	static final int intrimSamplingSize = 10000;
+	static final int intrimSamplingSize = 60000;
 	
 	private RBM[] rbms;
 	private int layerCount;

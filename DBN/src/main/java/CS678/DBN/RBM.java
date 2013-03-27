@@ -260,14 +260,17 @@ public class RBM {
 	public void update() throws Exception{
 
 		this.setVisibleBias();
-		
-		for(int row = 0; row < this.inputs.rows(); row++){
+		int rowCount = 0;
+		while(true){
+		//for(int row = 0; row < this.inputs.rows(); row++){
+			rowCount++;
+			int row = this.rand.nextInt(this.inputs.rows());
 			this.x1 = this.createInputFeatureVector(this.inputs.row(row));
 			this.CD1(false, false, null);
 			
 			if(this.updateWeights()){
 				if(printout2){
-					System.out.printf("No more updates needed. Done at row %d.\n\n", (row+1));
+					System.out.printf("No more updates needed. Done at %d iterations.\n\n", rowCount);
 				}
 				break;
 			}

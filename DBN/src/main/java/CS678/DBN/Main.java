@@ -18,6 +18,7 @@ public class Main {
 		
 		ObjectInputStream ois = new ObjectInputStream(new FileInputStream("data/train.matrix"));
 		Matrix trainingData = (Matrix) ois.readObject();
+		ois.close();
 		
 		Matrix testData = new Matrix();
 		testData.loadArff("data/test.arff");
@@ -26,9 +27,9 @@ public class Main {
 		//Matrix testData = (Matrix) ois.readObject();
 		//ois.close();
 		
-		int[] numHiddenNodes = {400, 49};
-		double[] criteria = {1E-3, 1E-3};
-		double[] thresholds = {0.3, 0.2};
+		int[] numHiddenNodes = {400, 200, 60};
+		double[] criteria = {1E-3, 1E-3, 1E-3};
+		double[] thresholds = {1, 1, 1};
 		int maxSampleSize = 100000;
 		
 		DBN dbn = new DBN(thresholds.length, trainingData, testData, numHiddenNodes, criteria, 
