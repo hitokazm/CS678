@@ -275,6 +275,9 @@ public class RBM {
 				break;
 			}
 			else{
+				if(rowCount > 300000){
+					System.out.printf("The iterations have reached %d. The update terminated.\n", rowCount);
+				}
 				if(printout)
 					System.out.println("More updates needed. Continue.\n");
 			}
