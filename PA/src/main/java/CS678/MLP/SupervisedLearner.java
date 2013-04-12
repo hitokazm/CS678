@@ -13,6 +13,9 @@ public abstract class SupervisedLearner {
 	private String learnerName;
 	private boolean useValidation;
 	
+	private Matrix testFeatures;
+	private Matrix testLabels;
+	
 	// Before you call this method, you need to divide your data
 	// into a feature matrix and a label matrix.
 	public abstract void train(Matrix features, Matrix labels) throws Exception;
@@ -84,6 +87,11 @@ public abstract class SupervisedLearner {
 		}
 	}
 
+	public void setTestData(Matrix testFeatures, Matrix testLabels){
+		this.testFeatures = testFeatures;
+		this.testLabels = testLabels;
+	}
+	
 	// I added this method for decision tree (graphviz)
 	public void setFileName(String name){
 		this.fileName = name;
