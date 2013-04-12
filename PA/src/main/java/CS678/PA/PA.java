@@ -2,6 +2,7 @@ package CS678.PA;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
@@ -50,7 +51,7 @@ public class PA extends SupervisedLearner {
 			yh[t] = dot(this.weights[t], instance); //get dot products without argmax (i.e., not getting the prediction label) in Figure 2 in the paper
 		}
 
-		double argmax = -1.0;
+		double argmax = rand.nextInt(this.numClasses);
 		double yt = Double.NEGATIVE_INFINITY;
 		
 		for(int t = 0; t < this.numClasses; t++)
@@ -78,7 +79,6 @@ public class PA extends SupervisedLearner {
 		// get number of classes for this dataset
 		this.numClasses = labels.valueCount(0);
 		
-		
 		//set initial weights to zeros
 		this.setWeights(this.numClasses, features);
 		
@@ -87,12 +87,16 @@ public class PA extends SupervisedLearner {
 		double sse = 0;
 		
 		Matrix flatLabels = this.customizeLabels(labels, 0, labels.rows()); // contain -1s and 1s horizontally
+
+		List<Integer> rows = new ArrayList<Integer>();
+		for(int row = 0; row < features.rows(); row++)
+			rows.add(row);
 		
 		for(int iteration = 0; iteration < this.numLoop; iteration++){
 			
-			this.shuffleData(features, flatLabels);
-			
-			for(int row = 0; row < features.rows(); row++){
+			Collections.shuffle(rows);
+			for(Integer row : rows){
+//			for(int row = 0; row < features.rows(); row++){
 				double[] instance = new double[features.row(row).length+1];
 				for(int col = 0; col < features.row(row).length; col++){
 					instance[col] = features.row(row)[col];
@@ -109,7 +113,7 @@ public class PA extends SupervisedLearner {
 				for(int i = 0; i < yh.length; i++)
 					yh[i] = 0.0; // initialize y_hat to zeros
 				
-				int yr_index = -1; // correct label
+				int yr_index = -1; // correct label variable
 				for(int t = 0; t < this.numClasses; t++){
 //					System.out.print("weights: ");
 //					for(double w : this.weights[t]){
@@ -170,7 +174,7 @@ public class PA extends SupervisedLearner {
 //				}
 				if(L < 1.0){
 					double loss = 1.0 - L; // see (41)
-					double xn = 2.0 * this.dot(instance, instance); // ||x_t||^2 on page 571 (last line)
+					double xn = 2.0 * this.dot(instance, instance); // 2*||x_t||^2 on page 571 (last line)
 					double tau = this.PA2(this.C, loss, xn); // PA2
 //					System.out.println("tau: " + tau);
 					for(int k = 0; k < flatLabels.cols(); k++){
@@ -192,6 +196,8 @@ public class PA extends SupervisedLearner {
 //						System.out.printf("%.2f ", this.weights[i][j]);
 //					System.out.println();
 //				}
+//				double acc = super.measureAccuracy(features, labels, null);
+//				System.out.println("instance: " + (row+1) + " Accuracy: " + acc);
 			}
 			
 //			System.out.printf("Iteration %d\n", (iteration+1));
@@ -201,17 +207,30 @@ public class PA extends SupervisedLearner {
 //				}
 //				System.out.println();
 //			}
-			if(iteration > 0){
-				sse = 0;
-				for(int i = 0; i < this.weights.length; i++)
-					for(int j = 0; j < this.weights[0].length; j++)
-						sse += Math.pow(this.weights[i][j] - wd[i][j], 2.0);
-				System.out.println("Iteratoin: " + (iteration+1) + " SSE: " + sse);
-				for(int i = 0; i < this.weights.length; i++)
-					wd[i] = Arrays.copyOf(this.weights[i], this.weights[i].length);
-			}
-			
+//			if(iteration > 0){
+//				sse = 0;
+//				for(int i = 0; i < this.weights.length; i++)
+//					for(int j = 0; j < this.weights[0].length; j++)
+//						sse += Math.pow(this.weights[i][j] - wd[i][j], 2.0);
+//				System.out.println("Iteration: " + (iteration+1) + " SSE: " + sse);
+//				for(int i = 0; i < this.weights.length; i++)
+//					wd[i] = Arrays.copyOf(this.weights[i], this.weights[i].length);
+//			}
 		}	
+	}
+	
+//	private void setGramMatrix(Matrix features) {
+//		int rows = features.rows();
+//		this.gramMatrix = new double[rows][rows];
+//		for(int row1 = 0; row1 < rows; row1++){
+//			for(int row2 = 0; row2 < rows; row2++){
+//				this.gramMatrix[row1][row2] = this.dot(features.row(row1), features.row(row2)) + 1;
+//			}
+//		}
+//	}
+
+	private double dot(Matrix features, int t){
+		return 0.0;
 	}
 	
 	private double dot(double[] weights, double[] instance) {

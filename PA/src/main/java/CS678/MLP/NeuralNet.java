@@ -169,15 +169,15 @@ public class NeuralNet extends SupervisedLearner{
 		
 		for(epoch = 0; epoch < maxIteration; epoch++){
 			
-			for(int row = 0; row < this.trainFeatures.rows(); row++){ // for each input vector
+			for(int row = 0; row < 500; row++){ // for each input vector
 				// set input vector (features + bias)
 				double[] inputVector = createInputFeatureVector(trainFeatures.row(row));
 				if(printout)
 					System.out.println("Epoch: " + (epoch+1) + "   Data instance: " + (row+1));
 				feedForward(inputVector);
 				backpropagation(row); // do backprop for better weights				
-					if(this.trainAccuracy == 1.0)
-						break;
+				if(this.trainAccuracy == 1.0)
+					break;
 			}
 			if(this.trainAccuracy == 1.0)
 				break;
@@ -203,7 +203,7 @@ public class NeuralNet extends SupervisedLearner{
 						System.out.printf("Epoch: %d \tCurrent Training Set Auccracy: %1.10f\n", (epoch+1), this.trainAccuracy);
 					}
 			}
-			this.shuffleData(trainFeatures, trainLabels);
+			//this.shuffleData(trainFeatures, trainLabels);
 		}
 		
 		System.out.println("Total Epochs: " + (epoch+1));
@@ -308,7 +308,7 @@ public class NeuralNet extends SupervisedLearner{
 	private void createDataset(Matrix features, Matrix labels) {
 	
 		// shuffle dataset
-		shuffleData(features, labels);
+		//shuffleData(features, labels);
 
 		// set the training data size
 		int trainSize = (int)(trainPercent * features.rows());

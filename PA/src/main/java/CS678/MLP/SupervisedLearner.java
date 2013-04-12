@@ -36,7 +36,7 @@ public abstract class SupervisedLearner {
 			throw(new Exception("Expected at least one row"));
 
 		int labelValues = labels.valueCount(0);
-		System.out.println("label values: " + labelValues);
+		//System.out.println("label values: " + labelValues);
 		if(labelValues == 0) // If the label is continuous...
 		{
 			// The label is continuous, so measure root mean squared error

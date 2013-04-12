@@ -5,9 +5,12 @@
 package CS678.MLP;
 
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Random;
 
+import CS678.PA.KPA;
 import CS678.PA.PA;
 
 import cs678.tools.Matrix;
@@ -24,7 +27,8 @@ public class MLSystemManager {
 	
 	public SupervisedLearner getLearner(String model, Random rand) throws Exception
 	{
-		if (model.equals("pa")) return new PA(200, 100);
+		if (model.equals("pa")) return new PA(1, 100);
+		else if (model.equals("kpa")) return new KPA(1, 100);
 		else throw new Exception("Unrecognized model: " + model);
 	}
 
@@ -62,9 +66,13 @@ public class MLSystemManager {
 			data = (Matrix) ois.readObject();
 		}
 			
+		double[] means = new double[data.cols()];
+		double[] sds = new double[data.cols()];
 		double[] max = new double[data.cols()];
 		double[] min = new double[data.cols()];
-		for(int col = 0; col < max.length; col++){
+		for(int col = 0; col < means.length; col++){
+			means[col] = data.columnMean(col);
+			sds[col] = data.columnSD(col, means[col]);
 			max[col] = data.columnMax(col);
 			min[col] = data.columnMin(col);
 		}
@@ -73,6 +81,10 @@ public class MLSystemManager {
 		{
 			System.out.println("Using normalized data\n");
 			data.normalize(true);
+			String outFile = "mnist-train.matrix";
+			ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("data/" + outFile));
+			oos.writeObject(data);
+			oos.close();
 		}
 
 		// Print some stats
@@ -125,7 +137,11 @@ public class MLSystemManager {
 
 			if (normalize){
 				//testData.normalize(); // BUG! This may normalize differently from the training data. It should use the same ranges for normalization!
-				testData.normalize(min, max, true); 
+				testData.normalize(means, sds, max, min, true);
+				String outFile = "mnist-test.matrix";
+				ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("data/" + outFile));
+				oos.writeObject(testData);
+				oos.close();
 			}
 
 			double trainAccuracy = learner.measureAccuracy(features, labels, null);
