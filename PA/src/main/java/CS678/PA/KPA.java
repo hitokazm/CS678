@@ -16,7 +16,7 @@ public class KPA extends SupervisedLearner {
 	private CounterMap<Integer, Integer> kernelMatrix;
 	private List<List<Pair<Double, Integer>>> weights;
 	private Matrix traininingFeatures;
-	private Matrix trainingLabels; 
+	private Matrix trainingLabels;
 	private Random rand; // random number generator
 
 	final static double power = 5.0; // power for polynomial kernel
@@ -123,11 +123,11 @@ public class KPA extends SupervisedLearner {
 			//for(int row = 0; row < features.rows(); row++){
 			Collections.shuffle(rows);
 			for(Integer row : rows){
-				double[] instance = new double[features.row(row).length+1];//features.row(row); 
-				for(int col = 0; col < features.row(row).length; col++){
-					instance[col] = features.row(row)[col];
-				}
-				instance[instance.length-1] = 1.0; // bias input
+				double[] instance = features.row(row); //new double[features.row(row).length+1]; 
+//				for(int col = 0; col < features.row(row).length; col++){
+//					instance[col] = features.row(row)[col];
+//				}
+//				instance[instance.length-1] = 1.0; // bias input
 				
 				double[] yh = new double[flatLabels.cols()]; // instantiate y^hat_t (for prediction)
 				
@@ -228,24 +228,27 @@ public class KPA extends SupervisedLearner {
 		for(Pair<Double, Integer> pair : this.weights.get(cls)){
 			double tau_y = pair.getFirst(); // tau_i * y_i (-1.0 or 1.0)
 			int row2 = pair.getSecond(); // rows contained in the update history
-			if(row <= row2){
-				if(!this.kernelMatrix.containsKey(row)){
-					this.setKernelMatrix(this.traininingFeatures, row, row2, power, constant);					
-				}
-				else if (!this.kernelMatrix.getCounter(row).containsKey(row2)){
-					this.setKernelMatrix(this.traininingFeatures, row, row2, power, constant);										
-				}
-				sum += tau_y * this.kernelMatrix.getCount(row, row2);
-			}
-			else{
-				if(!this.kernelMatrix.containsKey(row2)){
-					this.setKernelMatrix(this.traininingFeatures, row2, row, power, constant);					
-				}
-				else if (!this.kernelMatrix.getCounter(row2).containsKey(row)){
-					this.setKernelMatrix(this.traininingFeatures, row2, row, power, constant);										
-				}
-				sum += tau_y * this.kernelMatrix.getCount(row2, row);
-			}
+			
+			sum += tau_y * this.polynomialKernel(this.traininingFeatures.row(row), this.traininingFeatures.row(row2), power, constant);
+			
+//			if(row <= row2){
+//				if(!this.kernelMatrix.containsKey(row)){
+//					this.setKernelMatrix(this.traininingFeatures, row, row2, power, constant);					
+//				}
+//				else if (!this.kernelMatrix.getCounter(row).containsKey(row2)){
+//					this.setKernelMatrix(this.traininingFeatures, row, row2, power, constant);										
+//				}
+//				sum += tau_y * this.kernelMatrix.getCount(row, row2);
+//			}
+//			else{
+//				if(!this.kernelMatrix.containsKey(row2)){
+//					this.setKernelMatrix(this.traininingFeatures, row2, row, power, constant);					
+//				}
+//				else if (!this.kernelMatrix.getCounter(row2).containsKey(row)){
+//					this.setKernelMatrix(this.traininingFeatures, row2, row, power, constant);										
+//				}
+//				sum += tau_y * this.kernelMatrix.getCount(row2, row);
+//			}
 		}
 		
 //		System.out.println("matrix size: " + this.kernelMatrix.totalSize());
