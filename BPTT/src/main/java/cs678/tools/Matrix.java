@@ -30,6 +30,9 @@ public class Matrix implements Serializable {
 	ArrayList< TreeMap<String, Integer> > m_str_to_enum;
 	ArrayList< TreeMap<Integer, String> > m_enum_to_str;
 
+	double mean;
+	double sd;
+	
 	static double MISSING = Double.MAX_VALUE; // representation of missing values in the dataset
 
 	// Creates a 0x0 matrix. You should call loadARFF or setSize next.
@@ -279,6 +282,19 @@ public class Matrix implements Serializable {
 		return sum / count;
 	}
 
+	public double columnSD(int col){
+		double mean = columnMean(col);
+		return this.columnSD(col, mean);
+	}
+	
+	public double columnSD(int col, double mean){
+		double sqSum = 0.0;
+		for(int row = 0; row < rows(); row++){
+			sqSum += Math.pow(get(row,col)-mean, 2.0);
+		}
+		return Math.sqrt(sqSum/(double) rows());
+	}
+	
 	// Returns the min value in the specified column
 	public double columnMin(int col) {
 		double m = MISSING;
@@ -354,6 +370,39 @@ public class Matrix implements Serializable {
 		}
 	}
 
+	
+	
+	public void normalize(boolean standardNormal) {
+		for(int i = 0; i < cols(); i++) {
+			if(valueCount(i) == 0) {
+				double min = columnMin(i);
+				double max = columnMax(i);
+				
+				double mean = columnMean(i);
+				double sd = columnSD(i, mean);
+				
+				for(int j = 0; j < rows(); j++) {
+					double v = get(j, i);
+					if(v != MISSING)
+						if(max == min){
+							if(standardNormal)
+								set(j, i, 0);
+							else
+								set(j, i, 0.5);
+						}
+						else{
+							if(standardNormal){
+								set(j, i, (v - mean) / sd);
+							}
+							else{
+								set(j, i, (v - min) / (max - min));
+							}
+						}
+				}
+			}
+		}
+	}
+
 	public void normalize(double[] min, double[] max){
 		for(int i = 0; i < cols(); i++) {
 			if(valueCount(i) == 0) {
@@ -369,6 +418,39 @@ public class Matrix implements Serializable {
 		}		
 	}
 	
+	public void normalize(double[] means, double[] sds, double[] max, double[] min, boolean standardNormal){
+		for(int i = 0; i < cols(); i++) {
+			if(valueCount(i) == 0) {
+				double sum = 0;
+				for(int j = 0; j < rows(); j++){
+					sum += this.get(j, i);
+				}
+				double mean = sum / (double) rows();
+				sum = 0;
+				for(int j = 0; j < rows(); j++) {
+					double v = get(j, i);
+					if(v != MISSING)
+						if(max[i] == min[i]){
+							if(standardNormal){
+								set(j, i, 0.0);
+							}
+							else{
+								set(j, i, 0.5);
+							}
+						}
+						else{
+							if(standardNormal){
+								set(j, i, (v - means[i]) / sds[i]);
+							}
+							else{
+								set(j, i, (v - max[i])/ (max[i] - min[i]));
+							}
+						}
+				}
+			}
+		}		
+	}
+
 	public void print() {
 		System.out.println("@RELATION Untitled");
 		for(int i = 0; i < m_attr_name.size(); i++) {
