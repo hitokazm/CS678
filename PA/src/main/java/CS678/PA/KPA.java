@@ -1,8 +1,13 @@
 package CS678.PA;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Formatter;
 import java.util.List;
 import java.util.Random;
 
@@ -19,6 +24,10 @@ public class KPA extends SupervisedLearner {
 	private Matrix trainingLabels;
 	private Random rand; // random number generator
 
+	final static int B = 10000;
+	private int[] lowestRows; 
+	private List<List<Double>> kernels; 
+	
 	final static double power = 5.0; // power for polynomial kernel
 	//final static double constant = 0.45; // consntant for polynomial kernel
 	
@@ -29,6 +38,7 @@ public class KPA extends SupervisedLearner {
 	private int numClasses; // number of classes 
 	
 	public KPA(){
+		this.kernels = new ArrayList<List<Double>>();
 		this.rand = new Random(1000000L);
 		this.constant = 0.5;
 	}
@@ -59,11 +69,13 @@ public class KPA extends SupervisedLearner {
 		double argmax = rand.nextInt(this.numClasses);
 		double yt = Double.NEGATIVE_INFINITY;
 		
-		for(int t = 0; t < this.numClasses; t++)
+		for(int t = 0; t < this.numClasses; t++){
 			if(yt < yh[t]){
 				yt = yh[t]; // get argmax_s not in Y of yh (see line 5 in Figure 2 on page 571)
 				argmax = (double) t;
 			}
+		}
+		
 		labels[0] = argmax;
 	}
 
@@ -73,12 +85,29 @@ public class KPA extends SupervisedLearner {
 		for(Pair<Double, Integer> pair : this.weights.get(cls)){
 			double alpha = pair.getFirst();
 			int row = pair.getSecond();
-			sum += alpha * this.polynomialKernel(this.traininingFeatures.row(row), features, power, constant);
+			sum += alpha * this.polynomialKernel(this.traininingFeatures.row(row), 
+					features, power, constant);
 		}
 		
 		return sum;
 	}
-	
+
+	public void exportCSV(Formatter formatter, int i){
+		String fileName = "results" + (i+1) + ".csv";
+		
+		try{
+			File file = new File("results/" + fileName);
+			FileWriter filewriter = new FileWriter(file);
+			BufferedWriter bw = new BufferedWriter(filewriter);
+			PrintWriter pw = new PrintWriter(bw);
+			pw.write(formatter.toString());
+			pw.close();
+		}
+		catch(Exception e){
+			e.printStackTrace();
+		}
+	}
+
 	public double PA0(double loss, double xn){
 		return loss / xn;
 	}
@@ -94,15 +123,22 @@ public class KPA extends SupervisedLearner {
 	@Override
 	public void train(Matrix features, Matrix labels) throws Exception {
 		// save original features
+		
+		Formatter formatter = new Formatter(new StringBuilder());
+		
 		this.traininingFeatures = features;
+		this.trainingLabels = labels;
 		
 		// get number of classes for this dataset
 		this.numClasses = labels.valueCount(0);
+		
+		this.lowestRows = new int[this.numClasses];
 		
 		// set array of weights (update history) for kernelized PA
 		this.weights = new ArrayList<List<Pair<Double,Integer>>>(this.numClasses); // y*tau -> row
 		for(int i = 0; i < this.numClasses; i++){
 			this.weights.add(new ArrayList<Pair<Double, Integer>>());
+			this.kernels.add(new ArrayList<Double>());
 			//System.out.println("weight " + i + "'s size: " + this.weights.get(this.weights.size()-1).size());
 		}
 		
@@ -115,6 +151,14 @@ public class KPA extends SupervisedLearner {
 		
 		Matrix flatLabels = this.customizeLabels(labels, 0, labels.rows()); // contain -1s and 1s horizontally
 		
+//		for(int row = 0; row < labels.rows(); row++){
+//			System.out.print("original: " + labels.get(row, 0) + " converted: ");
+//			for(int col = 0; col < flatLabels.cols(); col++)
+//				System.out.print(flatLabels.get(row, col) + " ");
+//			System.out.println();
+//		}
+		
+		
 		List<Integer> rows = new ArrayList<Integer>();
 		for(int row = 0; row < features.rows(); row++)
 			rows.add(row);
@@ -122,12 +166,20 @@ public class KPA extends SupervisedLearner {
 		for(int iteration = 0; iteration < this.numLoop; iteration++){
 			//for(int row = 0; row < features.rows(); row++){
 			Collections.shuffle(rows);
+			int rowCount = 0;
 			for(Integer row : rows){
+				rowCount++;
 				double[] instance = features.row(row); //new double[features.row(row).length+1]; 
 //				for(int col = 0; col < features.row(row).length; col++){
 //					instance[col] = features.row(row)[col];
 //				}
 //				instance[instance.length-1] = 1.0; // bias input
+
+//				System.out.print("instance: ");
+//				for(double feature : instance){
+//					System.out.printf("%.2f ", feature);
+//				}
+//				System.out.println();
 				
 				double[] yh = new double[flatLabels.cols()]; // instantiate y^hat_t (for prediction)
 				
@@ -148,12 +200,16 @@ public class KPA extends SupervisedLearner {
 				if(yr_index == -1){ // no correct label is found (when does this happen??)
 					double yt = Double.NEGATIVE_INFINITY;
 					int yt_index = -1;
-					for(int t = 0; t < flatLabels.cols(); t++)
+					for(int t = 0; t < flatLabels.cols(); t++){
+//						System.out.println("SVs: ");
+//						System.out.println(this.weights.toString());
 						if(flatLabels.row(row)[t] < 1)
 							if(yt < yh[t]){
 								yt = yh[t]; // get argmax_s not in Y of yh (see line 5 in Figure 2 on page 571)
 								yt_index = t;
 							}
+					}
+					
 					double L = -1.0 * yt; // 0 (yr) - yt
 					if(L < 1){
 						double loss = 1.0 - L; // loss value on (40) on page 571
@@ -183,11 +239,28 @@ public class KPA extends SupervisedLearner {
 						}
 					}
 				}
+//				System.out.println("yr_index: " + yr_index + " yt_index: " + yt_index);
+//				System.out.println("yr: " + yr + " yt: " + yt);
+
 				double L = yr - yt; // compute w^r_t_t dot x - w^s_t_t dot x
+//				System.out.println("L: " + L);
+				
+//				System.out.println("before update weights: ");
+//				System.out.println(this.weights.toString());
+
 				if(L < 1.0){
 					double loss = 1.0 - L; // see (41)
-					double xn = 2.0 * this.dot(instance, instance); // 2*||x_t||^2 on page 571 (last line)
+//					System.out.println("loss: " + loss);
+					double xn = 2.0 * this.polynomialKernel(instance, instance, power, constant); //(this.dot(instance, instance) + 1); // 2*||x_t||^2 on page 571 (last line)
+//					System.out.println("xn: " + xn);
 					double tau = this.PA2(this.C, loss, xn); // PA2
+//					System.out.println("tau: " + tau);
+					if(this.weights.get(yt_index).size() + 1 > B){
+						this.weights.get(yt_index).remove(lowestRows[yt_index]);
+					}
+					if(this.weights.get(yr_index).size() + 1 > B){
+						this.weights.get(yr_index).remove(lowestRows[yr_index]);
+					}					
 					this.weights.get(yt_index).add(new Pair<Double, Integer>(-1.0 * tau, row));
 					this.weights.get(yr_index).add(new Pair<Double, Integer>(1.0 * tau, row));
 
@@ -203,7 +276,22 @@ public class KPA extends SupervisedLearner {
 //							}
 //						}
 //					}
+					int clsCount = 0;
+					for(List<Pair<Double, Integer>> weight : this.weights){
+						System.out.println("Class: " + clsCount + "  SV Count: " + weight.size());
+						clsCount++;
+					}
 				}
+				System.out.println("Insntance " + rowCount);
+//				System.out.println();
+//				double acc = super.measureAccuracy(super.getTestFeatures(), super.getTestLabels(), null);
+//				System.out.println("T=" + rowCount + "  Test set accuracy: " + acc);
+//				System.out.println();
+//				formatter.format("%d", rowCount);
+//				formatter.format(",");
+//				formatter.format("%f\n", acc);
+//				System.out.println("after update weights: ");
+//				System.out.println(this.weights.toString());
 			}
 			
 //			if(iteration > 0){
@@ -215,21 +303,52 @@ public class KPA extends SupervisedLearner {
 //				for(int i = 0; i < this.weights.length; i++)
 //					wd[i] = Arrays.copyOf(this.weights[i], this.weights[i].length);
 //			}
-		}	
+		}
+		//this.exportCSV(formatter, (int) power);
 	}
 	
 	private double getKernelizedDot(double[] instance, int row, int cls) {
 
+		
 		double sum = 0.0;
 		
 		if(this.weights.get(cls).size() == 0)
 			return sum;
 		
+		if(this.kernels.get(cls).size() + 1 > B){
+			//this.kernels.get(cls).clear();
+
+			double min = Double.POSITIVE_INFINITY;
+			int sv = -1;
+			int rowPosition = 0;
+
+			for(Pair<Double, Integer> pair : this.weights.get(cls)){
+				double tau_y = pair.getFirst(); // tau_i * y_i (-1.0 or 1.0)
+				int row2 = pair.getSecond(); // rows contained in the update history
+				
+				double dw = tau_y * this.polynomialKernel(this.traininingFeatures.row(row), 
+						this.traininingFeatures.row(row2), power, constant);
+				
+				if(Math.abs(dw) < min){
+					min = Math.abs(dw);
+					sv = rowPosition; // get the row position in the weight sv vector
+				}
+				rowPosition++;
+				
+				sum += dw;
+			}
+			
+			this.lowestRows[cls] = sv;
+			
+			return sum;
+		}
+		
 		for(Pair<Double, Integer> pair : this.weights.get(cls)){
 			double tau_y = pair.getFirst(); // tau_i * y_i (-1.0 or 1.0)
 			int row2 = pair.getSecond(); // rows contained in the update history
 			
-			sum += tau_y * this.polynomialKernel(this.traininingFeatures.row(row), this.traininingFeatures.row(row2), power, constant);
+			sum += tau_y * this.polynomialKernel(this.traininingFeatures.row(row), 
+					this.traininingFeatures.row(row2), power, constant);
 			
 //			if(row <= row2){
 //				if(!this.kernelMatrix.containsKey(row)){
@@ -291,7 +410,42 @@ public class KPA extends SupervisedLearner {
 //		System.out.println("power: " + power);
 //		System.out.println("dot product: " + (c+this.dot(feature1, feature2)));
 //		System.out.printf("Kernel: %.2f\n", Math.pow(c+this.dot(feature1, feature2), power));
-		return Math.pow(c+this.dot(feature1, feature2), power);
+		
+//		System.out.print("feature1: [");
+//		for(double f : feature1)
+//			System.out.printf("%.2f ", f);
+//		System.out.println("]");
+
+//		double[] feature = Arrays.copyOf(feature1, feature1.length+1);
+//		feature[feature1.length] = 1.0;
+//		feature1 = feature;
+
+//		System.out.print("new feature1: [");
+//		for(double f : feature1)
+//			System.out.printf("%.2f ", f);
+//		System.out.println("]");
+		
+//		feature = Arrays.copyOf(feature2, feature2.length+1);
+//		feature[feature2.length] = 1.0;
+//		feature2 = feature;
+		
+//		for(int i = 0; i < feature1.length; i++){
+//			System.out.printf("%.2f * %.2f ", feature1[i], feature2[i]);
+//			if(i < feature1.length - 1)
+//				System.out.print("+ ");
+//			else
+//				System.out.print("= ");
+//		}
+//		System.out.println(this.dot(feature1, feature2));
+//		
+//		System.out.println("(" + this.dot(feature1, feature2) + "+" 
+//		+ c + ")" + "^" + power + "=" + Math.pow(c+this.dot(feature1, feature2), power));
+		
+		double kernel = Math.pow(c+this.dot(feature1, feature2), power);
+		
+//		System.out.println("Kernel: " + kernel);
+		
+		return kernel;
 	}
 	
 	private double dot(double[] weights, double[] instance) {

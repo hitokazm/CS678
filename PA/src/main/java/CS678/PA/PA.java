@@ -1,8 +1,13 @@
 package CS678.PA;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Formatter;
 import java.util.List;
 import java.util.Random;
 
@@ -74,8 +79,26 @@ public class PA extends SupervisedLearner {
 		return loss/(xn+1.0/(2.0*C));
 	}
 
+	public void exportCSV(Formatter formatter, int i){
+		String fileName = "results" + (i+1) + ".csv";
+		
+		try{
+			File file = new File("results/" + fileName);
+			FileWriter filewriter = new FileWriter(file);
+			BufferedWriter bw = new BufferedWriter(filewriter);
+			PrintWriter pw = new PrintWriter(bw);
+			pw.write(formatter.toString());
+			pw.close();
+		}
+		catch(Exception e){
+			e.printStackTrace();
+		}
+	}
+
 	@Override
 	public void train(Matrix features, Matrix labels) throws Exception {		
+		Formatter formatter = new Formatter(new StringBuilder());
+		
 		// get number of classes for this dataset
 		this.numClasses = labels.valueCount(0);
 		
@@ -92,10 +115,13 @@ public class PA extends SupervisedLearner {
 		for(int row = 0; row < features.rows(); row++)
 			rows.add(row);
 		
+		int rowCount=0;
+		
 		for(int iteration = 0; iteration < this.numLoop; iteration++){
 			
 			Collections.shuffle(rows);
 			for(Integer row : rows){
+				rowCount++;
 //			for(int row = 0; row < features.rows(); row++){
 				double[] instance = new double[features.row(row).length+1];
 				for(int col = 0; col < features.row(row).length; col++){
@@ -165,7 +191,10 @@ public class PA extends SupervisedLearner {
 				}
 //				System.out.println("yr_index: " + yr_index + " yt_index: " + yt_index);
 //				System.out.println("yr: " + yr + " yt: " + yt);
+
 				double L = yr - yt; // compute w^r_t_t dot x - w^s_t_t dot x
+//				System.out.println("L: " + L);
+				
 //				System.out.println("before update weights: ");
 //				for(int i = 0; i < this.weights.length; i++){
 //					for(int j = 0; j < this.weights[i].length; j++)
@@ -174,7 +203,9 @@ public class PA extends SupervisedLearner {
 //				}
 				if(L < 1.0){
 					double loss = 1.0 - L; // see (41)
+//					System.out.println("loss: " + loss);
 					double xn = 2.0 * this.dot(instance, instance); // 2*||x_t||^2 on page 571 (last line)
+//					System.out.println("xn: " + xn);
 					double tau = this.PA2(this.C, loss, xn); // PA2
 //					System.out.println("tau: " + tau);
 					for(int k = 0; k < flatLabels.cols(); k++){
@@ -196,8 +227,9 @@ public class PA extends SupervisedLearner {
 //						System.out.printf("%.2f ", this.weights[i][j]);
 //					System.out.println();
 //				}
-//				double acc = super.measureAccuracy(features, labels, null);
-//				System.out.println("instance: " + (row+1) + " Accuracy: " + acc);
+				double acc = super.measureAccuracy(features, labels, null);
+				System.out.println("instance: " + (row+1) + " Accuracy: " + acc);
+				formatter.format("%d,%f\n", rowCount, acc);
 			}
 			
 //			System.out.printf("Iteration %d\n", (iteration+1));
@@ -216,7 +248,8 @@ public class PA extends SupervisedLearner {
 //				for(int i = 0; i < this.weights.length; i++)
 //					wd[i] = Arrays.copyOf(this.weights[i], this.weights[i].length);
 //			}
-		}	
+		}
+		this.exportCSV(formatter, 1);
 	}
 	
 //	private void setGramMatrix(Matrix features) {

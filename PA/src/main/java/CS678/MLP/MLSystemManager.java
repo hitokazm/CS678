@@ -24,6 +24,9 @@ public class MLSystemManager {
 
 	static final boolean regression = false; // used for knn
 	static final boolean pruning = false; // used for knn
+
+	static final boolean standardNormal = true;
+	static final boolean serialize = true;
 	
 	public SupervisedLearner getLearner(String model, Random rand) throws Exception
 	{
@@ -80,11 +83,16 @@ public class MLSystemManager {
 		if (normalize)
 		{
 			System.out.println("Using normalized data\n");
-			data.normalize(true);
-			String outFile = "mnist-train.matrix";
-			ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("data/" + outFile));
-			oos.writeObject(data);
-			oos.close();
+			data.mnistNormalize();
+			//data.print();
+			if(fileName.contains("train")){
+				if(serialize){
+					String outFile = "mnist-train.matrix";
+					ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("data/" + outFile));
+					oos.writeObject(data);
+					oos.close();
+				}
+			}
 		}
 
 		// Print some stats
@@ -125,30 +133,36 @@ public class MLSystemManager {
 				ois.close();
 			}
 
+			if (normalize){
+				//testData.normalize(); // BUG! This may normalize differently from the training data. It should use the same ranges for normalization!
+				testData.mnistNormalize();//normalize(means, sds, max, min, standardNormal);
+				if(serialize){
+					String outFile = "mnist-test.matrix";
+					ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("data/" + outFile));
+					oos.writeObject(testData);
+					oos.close();
+				}
+			}
+
 			System.out.println("Calculating accuracy on separate test set...");
 			System.out.println("Test set name: " + evalParameter);
 			System.out.println("Number of test instances: " + testData.rows());
+
 			Matrix features = new Matrix(data, 0, 0, data.rows(), data.cols() - 1);
 			Matrix labels = new Matrix(data, 0, data.cols() - 1, data.rows(), 1);
+
+			Matrix testFeatures = new Matrix(testData, 0, 0, testData.rows(), testData.cols() - 1);
+			Matrix testLabels = new Matrix(testData, 0, testData.cols() - 1, testData.rows(), 1);
+
+			learner.setTestData(features, labels);
+			
 			double startTime = System.currentTimeMillis();
 			learner.train(features, labels);
 			double elapsedTime = System.currentTimeMillis() - startTime;
 			System.out.println("Time to train (in seconds): " + elapsedTime / 1000.0);
 
-			if (normalize){
-				//testData.normalize(); // BUG! This may normalize differently from the training data. It should use the same ranges for normalization!
-				testData.normalize(means, sds, max, min, true);
-				String outFile = "mnist-test.matrix";
-				ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("data/" + outFile));
-				oos.writeObject(testData);
-				oos.close();
-			}
-
 			double trainAccuracy = learner.measureAccuracy(features, labels, null);
 			System.out.println("Training set accuracy: " + trainAccuracy);
-
-			Matrix testFeatures = new Matrix(testData, 0, 0, testData.rows(), testData.cols() - 1);
-			Matrix testLabels = new Matrix(testData, 0, testData.cols() - 1, testData.rows(), 1);
 
 			Matrix confusion = new Matrix();
 			double testAccuracy = learner.measureAccuracy(testFeatures, testLabels, confusion);

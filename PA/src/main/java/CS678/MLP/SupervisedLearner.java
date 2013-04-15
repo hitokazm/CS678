@@ -92,6 +92,14 @@ public abstract class SupervisedLearner {
 		this.testLabels = testLabels;
 	}
 	
+	public Matrix getTestFeatures(){
+		return this.testFeatures;
+	}
+	
+	public Matrix getTestLabels(){
+		return this.testLabels;
+	}
+	
 	// I added this method for decision tree (graphviz)
 	public void setFileName(String name){
 		this.fileName = name;
