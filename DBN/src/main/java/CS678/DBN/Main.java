@@ -27,10 +27,10 @@ public class Main {
 		//Matrix testData = (Matrix) ois.readObject();
 		//ois.close();
 		
-		int[] numHiddenNodes = {400, 200, 60};
+		int[] numHiddenNodes = {1000, 2000, 4000};
 		double[] criteria = {1E-3, 1E-3, 1E-3};
 		double[] thresholds = {1, 1, 1};
-		int maxSampleSize = 100000;
+		int maxSampleSize = 60000;
 		
 		DBN dbn = new DBN(thresholds.length, trainingData, testData, numHiddenNodes, criteria, 
 				thresholds, maxSampleSize);

@@ -11,7 +11,7 @@ public class RBM {
 	
 	static final boolean printout = false;
 	static final boolean printout2 = true;
-	static final boolean sampleFromProbabilities = true;
+	static final boolean sampleFromProbabilities = false;
 	
 	Matrix inputs; // samples or original inputs
 	double learningRate; // epsilon
@@ -268,7 +268,7 @@ public class RBM {
 			this.x1 = this.createInputFeatureVector(this.inputs.row(row));
 			this.CD1(false, false, null);
 			
-			if(this.updateWeights()){
+			if(this.updateWeights(rowCount)){
 				if(printout2){
 					System.out.printf("No more updates needed. Finished in %d iterations.\n\n", rowCount);
 				}
@@ -362,7 +362,7 @@ public class RBM {
 		return dataset;
 	}
 	
-	private boolean updateWeights() {
+	private boolean updateWeights(int sampleCount) {
 		
 		boolean stop = false;
 		int counter = 0;
@@ -423,7 +423,8 @@ public class RBM {
 			for(int i = 0; i < this.weights.length; i++)
 				this.bestWeights[i] = this.weights[i].clone();
 			if(printout2){
-				System.out.println("< Threshold Count: " + this.smallest + " (" + 
+				System.out.println(sampleCount + " New Threshold Count: " + 
+						this.smallest + " (" + 
 						percent +  "%)");
 		}
 			if(percent < this.threshold){

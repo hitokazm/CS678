@@ -5,8 +5,11 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -84,7 +87,7 @@ public class NeuralNet extends SupervisedLearner{
 	}
 	
 	public NeuralNet(Random rand, int numHidden, int ... numHiddenNodes){
-		this(rand, 0.1, numHidden);
+		this(rand, 0.01, numHidden);
 		this.setNumHiddenNodes(numHiddenNodes);
 	}
 	
@@ -167,59 +170,70 @@ public class NeuralNet extends SupervisedLearner{
 		// default training : validation = 8 : 2
 		createDataset(features, labels);
 
-		System.out.println(features.columnMax(0));
+		//System.out.println(features.columnMax(0));
 		
 		int noImprovementCount = 0; // counter to check if there is improvement 
 		
-		if(printout){
-			System.out.println("\nEpoch: 0\tOriginal Accuracy: " + this.trainAccuracy);
-		}
+//		if(printout){
+//			System.out.println("\nEpoch: 0\tOriginal Accuracy: " + this.trainAccuracy);
+//		}
 		
 		int epoch = 0;
 		
+		List<Integer> rows = new ArrayList<Integer>();
+		for(int i = 0; i < features.rows(); i++)
+			rows.add(i);
+		
 		for(epoch = 0; epoch < maxIteration; epoch++){
 			
-			for(int row = 0; row < this.trainFeatures.rows(); row++){ // for each input vector
+			Collections.shuffle(rows);
+			int rowCount = 0;
+			for(Integer row : rows){
+				rowCount++;
+			//for(int row = 0; row < features.rows(); row++){ // for each input vector
 				// set input vector (features + bias)
 				double[] inputVector = createInputFeatureVector(trainFeatures.row(row));
-				if(printout)
-					System.out.println("Epoch: " + (epoch+1) + "   Data instance: " + (row+1));
+//				if(printout)
+//					System.out.println("Epoch: " + (epoch+1) + "   Data instance: " + (row+1) + 
+//							" Row Count: " + rowCount);
 				feedForward(inputVector);
 				backpropagation(row); // do backprop for better weights				
-					if(this.trainAccuracy == 1.0)
-						break;
+//				if(this.trainAccuracy == 1.0)
+//					break;
 			}
-			if(this.trainAccuracy == 1.0)
-				break;
+			double acc = measureAccuracy(super.getTestFeatures(), super.getTestLabels(), null);
+			System.out.println("Test Set Accuracy: " + acc);
+//			if(this.trainAccuracy == 1.0)
+//				break;
 		
 			// calculate mean squared error
 			//computeMSE(mse, epoch+1);
 			//computeMisclassification(misclassification, epoch+1);
 			
-			if(useValidation){
-				if(isImproved("training")){
-					if(printout){
-						System.out.printf("Epoch: %d \tCurrent Training Set Auccracy: %1.10f", (epoch+1), this.trainAccuracy);
-						System.out.printf("\tCurrent Validation Set Auccracy: %1.10f\n", this.validationAccuracy);
-					}
-					noImprovementCount = 0;
-					if(!isImproved("validation")){
-						noImprovementCount++;
-					}
-				}
+//			if(useValidation){
+//				if(isImproved("training")){
+//					if(printout){
+//						System.out.printf("Epoch: %d \tCurrent Training Set Auccracy: %1.10f", (epoch+1), this.trainAccuracy);
+//						System.out.printf("\tCurrent Validation Set Auccracy: %1.10f\n", this.validationAccuracy);
+//					}
+//					noImprovementCount = 0;
+//					if(!isImproved("validation")){
+//						noImprovementCount++;
+//					}
+//				}
 //				if(noImprovementCount > noImprovedmentLimit){ // if no improvement count exceed the limit
 //					break; // get out and end the training
 //				}
 //				else{
 //					noImprovementCount++; // increment counter
 //				}				
-			}
-			else{
+//			}
+			//else{
 //				if(isImproved("training")){
 					//noImprovementCount = 0;
-					if(printout){
-						System.out.printf("Epoch: %d \tCurrent Training Set Auccracy: %1.10f\n", (epoch+1), this.trainAccuracy);
-					}
+					//if(printout){
+					//	System.out.printf("Epoch: %d \tCurrent Training Set Auccracy: %1.10f\n", (epoch+1), this.trainAccuracy);
+					//}
 //				}
 //				if(noImprovementCount > noImprovedmentLimit){ // if no improvement count exceed the limit
 //					break; // get out and end the training
@@ -227,11 +241,11 @@ public class NeuralNet extends SupervisedLearner{
 //				else{
 //					noImprovementCount++; // increment counter
 //				}
-			}
-			this.shuffleData(trainFeatures, trainLabels);
+			//}
+			//this.shuffleData(trainFeatures, trainLabels);
 		}
 		
-		System.out.println("Total Epochs: " + (epoch+1));
+//		System.out.println("Total Epochs: " + (epoch+1));
 		//exportCSV(mse, "mse.csv");
 		//exportCSV(misclassification, "misclassification.csv");
 	}
@@ -324,9 +338,9 @@ public class NeuralNet extends SupervisedLearner{
 			}
 		}
 		
-		if(printout){
-			System.out.println("# of output nodes: " + this.numOutputNodes);
-		}
+//		if(printout){
+//			System.out.println("# of output nodes: " + this.numOutputNodes);
+//		}
 	}
 
 	private void instantiateLayers() {
@@ -338,17 +352,17 @@ public class NeuralNet extends SupervisedLearner{
 		}
 		this.layers[this.layers.length-1] = new OutputLayer(this.numOutputNodes-1, this.eta, this.rand, this.alpha); // initialize output layer		
 
-		if(printout){
-			System.out.println("# of layers: " + this.layers.length);
-		}
+//		if(printout){
+//			System.out.println("# of layers: " + this.layers.length);
+//		}
 	}
 
 	private void setWeights(Matrix features) {
 		
 		for(int i = 0; i < layers.length; i++){
-			if(printout){
-				System.out.println("Layer " + (i+1) + " Weights: ");
-			}
+//			if(printout){
+//				System.out.println("Layer " + (i+1) + " Weights: ");
+//			}
 			if(i == 0){ // if the lowest layer
 				layers[i].setWeights(features.cols() + 1); // # weights are the same as input size + 1 (bias)
 			}
@@ -367,7 +381,7 @@ public class NeuralNet extends SupervisedLearner{
 	private void createDataset(Matrix features, Matrix labels) {
 	
 		// shuffle dataset
-		shuffleData(features, labels);
+		//shuffleData(features, labels);
 
 		// set the training data size
 		int trainSize = (int)(trainPercent * features.rows());
@@ -421,12 +435,12 @@ public class NeuralNet extends SupervisedLearner{
 	}
 
 
-	private void shuffleData(Matrix features, Matrix labels) {
-		this.rand = new Random(seed); // set the random seed to 1L
-		features.shuffle(rand);
-		this.rand = new Random(seed); // set the random seed to 1L
-		labels.shuffle(rand);		
-	}
+//	private void shuffleData(Matrix features, Matrix labels) {
+//		this.rand = new Random(seed); // set the random seed to 1L
+//		features.shuffle(rand);
+//		this.rand = new Random(seed); // set the random seed to 1L
+//		labels.shuffle(rand);		
+//	}
 
 	/**
 	 * create input vector (features + 1 for bias)

@@ -60,13 +60,13 @@ public class Neuron {
 		this.weights = new double[size];
 		setInitialWeights(this.weights);
 		this.tempWeights = Arrays.copyOf(this.weights, this.weights.length);
-		if(printout){
-			System.out.print("     ");
-			for(double weight : weights){
-				System.out.printf("%6.3f ", weight);
-			}
-			System.out.println();
-		}
+//		if(printout){
+//			System.out.print("     ");
+//			for(double weight : weights){
+//				System.out.printf("%6.3f ", weight);
+//			}
+//			System.out.println();
+//		}
 	}
 	
 	// compute net value with dot product (Sigma (w_i x_i))
@@ -142,11 +142,11 @@ public class Neuron {
 
 		// the bias input is treated in NeuralNet class
 		
-		this.input = new double[input.length];
+		this.input = input;//new double[input.length];
 		
-		for(int i = 0; i < input.length; i++){
-			this.input[i] = input[i]; 
-		}
+//		for(int i = 0; i < input.length; i++){
+//			this.input[i] = input[i]; 
+//		}
 		
 	}
 
@@ -167,7 +167,7 @@ public class Neuron {
 	// post-condition: set the new weight vector with the update formula
 	public void updateWeights(double[] weights, double delta, double[] input) throws Exception{
 
-		this.tempWeights = Arrays.copyOf(weights, weights.length);
+//		this.tempWeights = Arrays.copyOf(weights, weights.length);
 		
 		if(weights.length != input.length)
 			throw(new Exception("The weight and input vectors should have the same lengths."));
@@ -214,10 +214,10 @@ public class Neuron {
 	/**
 	 * undo weight update done by backpropagation
 	 */
-	public void undoWeightUpdate() {
-		
-		this.weights = Arrays.copyOf(this.tempWeights, this.tempWeights.length);
-		
-	}
+//	public void undoWeightUpdate() {
+//		
+//		this.weights = Arrays.copyOf(this.tempWeights, this.tempWeights.length);
+//		
+//	}
 		
 }

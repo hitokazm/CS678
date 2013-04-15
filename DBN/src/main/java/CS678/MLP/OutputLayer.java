@@ -57,9 +57,9 @@ public class OutputLayer extends Layer{
 		// calculate (t_k - y_k)
 		for(int i = 0; i < this.target.length; i++){
 			this.diff[i] = this.target[i] - this.output[i]; // t_k - y_k
-			if(printout){
-				System.out.printf("diff: %6.3f - %6.3f = %6.3f\n", this.target[i], this.output[i], this.diff[i]);
-			}
+//			if(printout){
+//				System.out.printf("diff: %6.3f - %6.3f = %6.3f\n", this.target[i], this.output[i], this.diff[i]);
+//			}
 		}
 		
 		computeDeltas();
@@ -103,20 +103,20 @@ public class OutputLayer extends Layer{
 		
 		this.deltas = new double[this.getNumNeurons()]; // 
 		
-		if(printout){
-			System.out.println("delta: " + this.deltas.length + "  diff: " + diff.length + "   output: " 
-					+ output.length + "   neurons: " + neurons.length);
-			System.out.print("Delta_ok: ");
-		}
+//		if(printout){
+//			System.out.println("delta: " + this.deltas.length + "  diff: " + diff.length + "   output: " 
+//					+ output.length + "   neurons: " + neurons.length);
+//			System.out.print("Delta_ok: ");
+//		}
 		for(int k = 0; k < deltas.length; k++){
 			this.deltas[k] = this.diff[k] * this.output[k] * (1 - this.output[k]);
-			if(printout){
-				System.out.printf("%6.3f (%6.3f * %6.3f * (1 - %6.3f))", deltas[k], 
-						this.diff[k], this.output[k], this.output[k]);
-			}
+//			if(printout){
+//				System.out.printf("%6.3f (%6.3f * %6.3f * (1 - %6.3f))", deltas[k], 
+//						this.diff[k], this.output[k], this.output[k]);
+//			}
 		}
-		if(printout)
-			System.out.println();
+//		if(printout)
+//			System.out.println();
 		
 	}
 	

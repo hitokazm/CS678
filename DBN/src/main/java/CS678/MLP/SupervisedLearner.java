@@ -13,6 +13,9 @@ public abstract class SupervisedLearner {
 	private String learnerName;
 	private boolean useValidation;
 	
+	private Matrix testFeatures;
+	private Matrix testLabels;
+	
 	// Before you call this method, you need to divide your data
 	// into a feature matrix and a label matrix.
 	public abstract void train(Matrix features, Matrix labels) throws Exception;
@@ -82,6 +85,19 @@ public abstract class SupervisedLearner {
 			}
 			return (double)correctCount / features.rows();
 		}
+	}
+	
+	public void setTestData(Matrix features, Matrix labels){
+		this.testFeatures = features;
+		this.testLabels = labels;
+	}
+	
+	public Matrix getTestFeatures(){
+		return this.testFeatures;
+	}
+	
+	public Matrix getTestLabels(){
+		return this.testLabels;
 	}
 
 	// I added this method for decision tree (graphviz)

@@ -87,9 +87,9 @@ public abstract class Layer {
 	*/	
 	public void setInput(double[] output){
 		
-		this.input = Arrays.copyOf(output, output.length);
+		this.input = output;//Arrays.copyOf(output, output.length);
 		for(Neuron neuron : neurons){
-			neuron.setInput(input);
+			neuron.setInput(output);
 		}
 		
 	}
@@ -147,13 +147,13 @@ public abstract class Layer {
 	/**
 	 * undo the weight updates in each neuron of this layer
 	 */
-	public void undoWeightUpdate() {
-		
-		for(Neuron neuron : neurons){
-			neuron.undoWeightUpdate();
-		}
-		
-	}
+//	public void undoWeightUpdate() {
+//		
+//		for(Neuron neuron : neurons){
+//			neuron.undoWeightUpdate();
+//		}
+//		
+//	}
 	
 	/**	
 	 *  calculate the coefficient multiple for error (delta) and passed down to the lower layer

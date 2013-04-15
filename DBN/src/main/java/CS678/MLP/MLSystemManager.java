@@ -112,6 +112,11 @@ public class MLSystemManager {
 				ois.close();
 			}
 
+			Matrix testFeatures = new Matrix(testData, 0, 0, testData.rows(), testData.cols() - 1);
+			Matrix testLabels = new Matrix(testData, 0, testData.cols() - 1, testData.rows(), 1);
+
+			learner.setTestData(testFeatures, testLabels);
+			
 			System.out.println("Calculating accuracy on separate test set...");
 			System.out.println("Test set name: " + evalParameter);
 			System.out.println("Number of test instances: " + testData.rows());
@@ -129,10 +134,7 @@ public class MLSystemManager {
 
 			double trainAccuracy = learner.measureAccuracy(features, labels, null);
 			System.out.println("Training set accuracy: " + trainAccuracy);
-
-			Matrix testFeatures = new Matrix(testData, 0, 0, testData.rows(), testData.cols() - 1);
-			Matrix testLabels = new Matrix(testData, 0, testData.cols() - 1, testData.rows(), 1);
-
+			
 			Matrix confusion = new Matrix();
 			double testAccuracy = learner.measureAccuracy(testFeatures, testLabels, confusion);
 			System.out.println("Test set accuracy: " + testAccuracy);
