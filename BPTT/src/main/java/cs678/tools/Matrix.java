@@ -290,7 +290,7 @@ public class Matrix implements Serializable {
 	public double columnSD(int col, double mean){
 		double sqSum = 0.0;
 		for(int row = 0; row < rows(); row++){
-			sqSum += Math.pow(get(row,col)-mean, 2.0);
+			sqSum += Math.pow((get(row,col)-mean), 2.0);
 		}
 		return Math.sqrt(sqSum/(double) rows());
 	}
@@ -370,7 +370,30 @@ public class Matrix implements Serializable {
 		}
 	}
 
+	public void normalize(double max){
+		for(int i = 0; i < cols(); i++) {
+			if(valueCount(i) == 0) {
+				for(int j = 0; j < rows(); j++) {
+					double v = get(j, i);
+					if(v != MISSING)
+						set(j, i, (v / max));
+				}
+			}
+		}		
+	}
 	
+	// normalizing mnist data
+	public void mnistNormalize() {
+		for(int i = 0; i < cols(); i++) {
+			if(valueCount(i) == 0) {
+				for(int j = 0; j < rows(); j++) {
+					double v = get(j, i);
+					if(v != MISSING)
+						set(j, i, (v / 255.0));
+				}
+			}
+		}		
+	}
 	
 	public void normalize(boolean standardNormal) {
 		for(int i = 0; i < cols(); i++) {
@@ -385,10 +408,14 @@ public class Matrix implements Serializable {
 					double v = get(j, i);
 					if(v != MISSING)
 						if(max == min){
-							if(standardNormal)
+							if(max == 0 & min == 0)
 								set(j, i, 0);
-							else
-								set(j, i, 0.5);
+							else{
+								if(standardNormal)
+									set(j, i, 0);
+								else
+									set(j, i, 0.5);
+							}
 						}
 						else{
 							if(standardNormal){
@@ -431,11 +458,13 @@ public class Matrix implements Serializable {
 					double v = get(j, i);
 					if(v != MISSING)
 						if(max[i] == min[i]){
-							if(standardNormal){
-								set(j, i, 0.0);
-							}
+							if(max[i] == 0 & min[i] == 0)
+								set(j, i, 0);
 							else{
-								set(j, i, 0.5);
+								if(standardNormal)
+									set(j, i, 0);
+								else
+									set(j, i, 0.5);
 							}
 						}
 						else{
@@ -443,7 +472,7 @@ public class Matrix implements Serializable {
 								set(j, i, (v - means[i]) / sds[i]);
 							}
 							else{
-								set(j, i, (v - max[i])/ (max[i] - min[i]));
+								set(j, i, (v - min[i])/ (max[i] - min[i]));
 							}
 						}
 				}
